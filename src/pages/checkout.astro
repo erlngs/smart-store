@@ -1,0 +1,348 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="checkout - SmartStore" bodyClass="checkout">
+
+    <!-- Checkout Section -->
+    <section id="checkout" class="checkout section">
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+        <!-- Progress Stepper -->
+        <div class="progress-stepper d-flex justify-content-center mb-5" data-aos="fade-down" data-aos-delay="100">
+          <div class="step-item active">
+            <div class="step-icon"><i class="bi bi-person"></i></div>
+            <span class="step-label">Details</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item">
+            <div class="step-icon"><i class="bi bi-truck"></i></div>
+            <span class="step-label">Shipping</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item">
+            <div class="step-icon"><i class="bi bi-credit-card"></i></div>
+            <span class="step-label">Payment</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item">
+            <div class="step-icon"><i class="bi bi-check-circle"></i></div>
+            <span class="step-label">Confirm</span>
+          </div>
+        </div>
+
+        <div class="row">
+
+          <!-- Order Summary - Left Side -->
+          <div class="col-lg-4 order-lg-1 order-2">
+            <div class="summary-panel" data-aos="fade-right" data-aos-delay="200">
+              <div class="summary-top">
+                <h3><i class="bi bi-bag-check me-2"></i>Your Cart</h3>
+                <span class="badge-count">2</span>
+              </div>
+
+              <div class="summary-items">
+                <div class="summary-item">
+                  <div class="item-thumb">
+                    <img src="assets/store/img/product/product-5.webp" alt="Product" class="img-fluid">
+                    <span class="item-qty">1</span>
+                  </div>
+                  <div class="item-info">
+                    <h5>Adipiscing Elite</h5>
+                    <span class="item-meta">Shade: Onyx | Fit: M</span>
+                  </div>
+                  <div class="item-cost">$89.99</div>
+                </div><!-- End Summary Item -->
+
+                <div class="summary-item">
+                  <div class="item-thumb">
+                    <img src="assets/store/img/product/product-8.webp" alt="Product" class="img-fluid">
+                    <span class="item-qty">2</span>
+                  </div>
+                  <div class="item-info">
+                    <h5>Vestibulum Ante</h5>
+                    <span class="item-meta">Shade: Ivory | Fit: L</span>
+                  </div>
+                  <div class="item-cost">$59.99</div>
+                </div><!-- End Summary Item -->
+              </div>
+
+              <div class="coupon-field">
+                <div class="input-group">
+                  <input type="text" class="form-control" placeholder="Discount Code" aria-label="Discount Code">
+                  <button class="btn" type="button">Redeem</button>
+                </div>
+              </div>
+
+              <div class="summary-breakdown">
+                <div class="breakdown-row d-flex justify-content-between">
+                  <span>Subtotal</span>
+                  <span>$209.97</span>
+                </div>
+                <div class="breakdown-row d-flex justify-content-between">
+                  <span>Delivery</span>
+                  <span>$9.99</span>
+                </div>
+                <div class="breakdown-row d-flex justify-content-between">
+                  <span>Estimated Tax</span>
+                  <span>$21.00</span>
+                </div>
+                <div class="breakdown-total d-flex justify-content-between">
+                  <span>Order Total</span>
+                  <span>$240.96</span>
+                </div>
+              </div>
+
+              <div class="trust-badges">
+                <div class="trust-item">
+                  <i class="bi bi-shield-check"></i>
+                  <span>Protected Payment</span>
+                </div>
+                <div class="trust-icons">
+                  <i class="bi bi-credit-card-2-front"></i>
+                  <i class="bi bi-credit-card"></i>
+                  <i class="bi bi-paypal"></i>
+                  <i class="bi bi-apple"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Checkout Form - Right Side -->
+          <div class="col-lg-8 order-lg-2 order-1">
+            <div class="form-wrapper" data-aos="fade-left" data-aos-delay="150">
+              <form class="checkout-form">
+
+                <!-- Personal Details -->
+                <div class="form-block" id="customer-details">
+                  <div class="block-heading">
+                    <i class="bi bi-person-circle"></i>
+                    <h3>Personal Details</h3>
+                  </div>
+                  <div class="block-body">
+                    <div class="row">
+                      <div class="col-md-6 form-group">
+                        <label for="fname">Given Name</label>
+                        <input type="text" name="first-name" class="form-control" id="fname" placeholder="Enter Given Name" required="">
+                      </div>
+                      <div class="col-md-6 form-group">
+                        <label for="lname">Family Name</label>
+                        <input type="text" name="last-name" class="form-control" id="lname" placeholder="Enter Family Name" required="">
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6 form-group">
+                        <label for="cust-email">Email Address</label>
+                        <input type="email" class="form-control" name="email" id="cust-email" placeholder="Enter Email" required="">
+                      </div>
+                      <div class="col-md-6 form-group">
+                        <label for="cust-phone">Mobile Number</label>
+                        <input type="tel" class="form-control" name="phone" id="cust-phone" placeholder="Enter Mobile" required="">
+                      </div>
+                    </div>
+                  </div>
+                </div><!-- End Personal Details -->
+
+                <!-- Delivery Address -->
+                <div class="form-block" id="delivery-address">
+                  <div class="block-heading">
+                    <i class="bi bi-geo-alt"></i>
+                    <h3>Delivery Address</h3>
+                  </div>
+                  <div class="block-body">
+                    <div class="row">
+                      <div class="col-md-8 form-group">
+                        <label for="street">Street Address</label>
+                        <input type="text" class="form-control" name="address" id="street" placeholder="Enter Street Address" required="">
+                      </div>
+                      <div class="col-md-4 form-group">
+                        <label for="unit">Unit / Suite</label>
+                        <input type="text" class="form-control" name="apartment" id="unit" placeholder="Apt, Unit, etc.">
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-5 form-group">
+                        <label for="checkout-city">City</label>
+                        <input type="text" name="city" class="form-control" id="checkout-city" placeholder="City" required="">
+                      </div>
+                      <div class="col-md-4 form-group">
+                        <label for="checkout-state">State / Province</label>
+                        <input type="text" name="state" class="form-control" id="checkout-state" placeholder="State" required="">
+                      </div>
+                      <div class="col-md-3 form-group">
+                        <label for="postal">Postal Code</label>
+                        <input type="text" name="zip" class="form-control" id="postal" placeholder="ZIP" required="">
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="checkout-country">Country / Region</label>
+                      <select class="form-select" id="checkout-country" name="country" required="">
+                        <option value="">Choose Country</option>
+                        <option value="US">United States</option>
+                        <option value="CA">Canada</option>
+                        <option value="UK">United Kingdom</option>
+                        <option value="AU">Australia</option>
+                        <option value="DE">Germany</option>
+                        <option value="FR">France</option>
+                      </select>
+                    </div>
+                    <div class="d-flex flex-wrap gap-4 mt-2">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="remember-address" name="save-address">
+                        <label class="form-check-label" for="remember-address">Remember this address</label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="same-billing" name="billing-same" checked="">
+                        <label class="form-check-label" for="same-billing">Use as billing address</label>
+                      </div>
+                    </div>
+                  </div>
+                </div><!-- End Delivery Address -->
+
+                <!-- Payment Info -->
+                <div class="form-block" id="payment-info">
+                  <div class="block-heading">
+                    <i class="bi bi-wallet2"></i>
+                    <h3>Payment Info</h3>
+                  </div>
+                  <div class="block-body">
+                    <div class="pay-methods">
+                      <label class="pay-method active">
+                        <input type="radio" name="payment-method" id="pay-card" checked="">
+                        <span class="method-inner">
+                          <i class="bi bi-credit-card-2-front"></i>
+                          <span>Card</span>
+                        </span>
+                      </label>
+                      <label class="pay-method">
+                        <input type="radio" name="payment-method" id="pay-paypal">
+                        <span class="method-inner">
+                          <i class="bi bi-paypal"></i>
+                          <span>PayPal</span>
+                        </span>
+                      </label>
+                      <label class="pay-method">
+                        <input type="radio" name="payment-method" id="pay-apple">
+                        <span class="method-inner">
+                          <i class="bi bi-apple"></i>
+                          <span>Apple Pay</span>
+                        </span>
+                      </label>
+                    </div>
+
+                    <div class="pay-details" id="card-form">
+                      <div class="form-group">
+                        <label for="cardnum">Card Number</label>
+                        <div class="card-input-wrap">
+                          <input type="text" class="form-control" name="card-number" id="cardnum" placeholder="0000 0000 0000 0000" required="">
+                          <div class="card-brands">
+                            <i class="bi bi-credit-card-2-front"></i>
+                            <i class="bi bi-credit-card"></i>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-4 form-group">
+                          <label for="exp-date">Expiry Date</label>
+                          <input type="text" class="form-control" name="expiry" id="exp-date" placeholder="MM/YY" required="">
+                        </div>
+                        <div class="col-md-4 form-group">
+                          <label for="sec-code">CVV</label>
+                          <div class="cvv-field">
+                            <input type="text" class="form-control" name="cvv" id="sec-code" placeholder="•••" required="">
+                            <span class="cvv-info" data-bs-toggle="tooltip" data-bs-placement="top" title="3-digit security code on the back of your card">
+                              <i class="bi bi-info-circle"></i>
+                            </span>
+                          </div>
+                        </div>
+                        <div class="col-md-4 form-group">
+                          <label for="cardholder">Cardholder</label>
+                          <input type="text" class="form-control" name="card-name" id="cardholder" placeholder="Full Name" required="">
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="pay-details d-none" id="paypal-form">
+                      <p class="alt-pay-msg">You will be forwarded to PayPal to finalize your transaction securely.</p>
+                    </div>
+
+                    <div class="pay-details d-none" id="apple-form">
+                      <p class="alt-pay-msg">You will be asked to confirm payment through Apple Pay.</p>
+                    </div>
+                  </div>
+                </div><!-- End Payment Info -->
+
+                <!-- Confirmation -->
+                <div class="form-block" id="confirmation">
+                  <div class="block-heading">
+                    <i class="bi bi-clipboard-check"></i>
+                    <h3>Confirm &amp; Submit</h3>
+                  </div>
+                  <div class="block-body">
+                    <div class="form-check agreement-check">
+                      <input class="form-check-input" type="checkbox" id="agree-terms" name="terms" required="">
+                      <label class="form-check-label" for="agree-terms">
+                        I accept the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms of Service</a> and <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>
+                      </label>
+                    </div>
+                    <div class="success-message d-none">Your order has been confirmed successfully! Thank you for shopping with us.</div>
+                    <button type="submit" class="btn submit-order-btn">
+                      <i class="bi bi-lock me-2"></i>
+                      <span>Complete Purchase</span>
+                      <span class="order-amount">$240.96</span>
+                    </button>
+                  </div>
+                </div><!-- End Confirmation -->
+
+              </form>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Terms Modal -->
+        <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Terms of Service</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.</p>
+                <p>Suspendisse in orci enim. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.</p>
+                <p>Suspendisse in orci enim. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Understood</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Privacy Modal -->
+        <div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="privacyModalLabel">Privacy Policy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim.</p>
+                <p>Suspendisse in orci enim. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.</p>
+                <p>Suspendisse in orci enim. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Understood</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section><!-- /Checkout Section -->
+
+</BaseLayout>

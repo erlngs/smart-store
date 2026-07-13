@@ -1,0 +1,579 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="account - SmartStore" bodyClass="account">
+    <!-- Page Title -->
+    <div class="page-title light-background">
+      <div class="container d-lg-flex justify-content-between align-items-center">
+        <h1 class="mb-2 mb-lg-0">Account</h1>
+        <nav class="breadcrumbs">
+          <ol>
+            <li><a href="index.html">Home</a></li>
+            <li class="current">Account</li>
+          </ol>
+        </nav>
+      </div>
+    </div><!-- End Page Title -->
+
+    <!-- Account Section -->
+    <section id="account" class="account section">
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+        <!-- Account Banner -->
+        <div class="account-banner" data-aos="zoom-in" data-aos-delay="100">
+          <div class="row align-items-center g-3">
+            <div class="col-auto">
+              <div class="avatar-wrap">
+                <img src="assets/store/img/person/person-f-7.webp" alt="Profile" loading="lazy">
+                <span class="verified-mark"><i class="bi bi-patch-check-fill"></i></span>
+              </div>
+            </div>
+            <div class="col">
+              <h3 class="user-name">Elena Mitchell</h3>
+              <div class="member-tag"><i class="bi bi-gem"></i> Gold Member</div>
+            </div>
+            <div class="col-md-auto d-none d-md-flex">
+              <div class="stat-pills">
+                <div class="pill-item"><span class="pill-val">3</span><span class="pill-txt">Orders</span></div>
+                <div class="pill-item"><span class="pill-val">12</span><span class="pill-txt">Saved</span></div>
+                <div class="pill-item"><span class="pill-val">8</span><span class="pill-txt">Reviews</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-strip" data-aos="fade-up" data-aos-delay="150">
+          <div class="tab-strip-inner">
+            <ul class="nav" role="tablist">
+              <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" data-bs-target="#account-tab-orders"><i class="bi bi-bag"></i><span>Orders</span></a></li>
+              <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" data-bs-target="#account-tab-wishlist"><i class="bi bi-bookmark-heart"></i><span>Favorites</span></a></li>
+              <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" data-bs-target="#account-tab-wallet"><i class="bi bi-credit-card-2-front"></i><span>Payments</span></a></li>
+              <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" data-bs-target="#account-tab-reviews"><i class="bi bi-chat-square-text"></i><span>Feedback</span></a></li>
+              <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" data-bs-target="#account-tab-addresses"><i class="bi bi-pin-map"></i><span>Locations</span></a></li>
+              <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" data-bs-target="#account-tab-settings"><i class="bi bi-sliders"></i><span>Preferences</span></a></li>
+            </ul>
+            <div class="strip-actions d-none d-lg-flex">
+              <a href="#" class="strip-link"><i class="bi bi-life-preserver"></i> Support</a>
+              <a href="#" class="strip-link sign-out"><i class="bi bi-power"></i> Sign Out</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content panel-area">
+
+          <!-- Orders Tab -->
+          <div class="tab-pane fade show active" id="account-tab-orders">
+            <div class="panel-header" data-aos="fade-up">
+              <h2>Purchase History</h2>
+              <div class="panel-tools">
+                <div class="tool-search"><i class="bi bi-search"></i><input type="text" placeholder="Find an order..."></div>
+                <div class="dropdown">
+                  <button class="tool-filter" data-bs-toggle="dropdown"><i class="bi bi-filter-circle"></i><span>Filter</span></button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#">All Orders</a></li>
+                    <li><a class="dropdown-item" href="#">Processing</a></li>
+                    <li><a class="dropdown-item" href="#">Shipped</a></li>
+                    <li><a class="dropdown-item" href="#">Delivered</a></li>
+                    <li><a class="dropdown-item" href="#">Cancelled</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="order-list">
+              <!-- Order 1 -->
+              <div class="order-row status-processing" data-aos="fade-up" data-aos-delay="100">
+                <div class="row align-items-center g-3">
+                  <div class="col-lg-5">
+                    <div class="order-main">
+                      <div class="order-thumbs">
+                        <img src="assets/store/img/product/product-1.webp" alt="Product" loading="lazy">
+                        <img src="assets/store/img/product/product-2.webp" alt="Product" loading="lazy">
+                        <img src="assets/store/img/product/product-3.webp" alt="Product" loading="lazy">
+                      </div>
+                      <div class="order-brief">
+                        <span class="order-ref">#ORD-2025-4781</span>
+                        <span class="order-when">Mar 12, 2025</span>
+                        <span class="order-qty">3 items</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-lg-2 text-center"><span class="status-pill processing">Processing</span></div>
+                  <div class="col-6 col-lg-2 text-center"><span class="order-total">$789.99</span></div>
+                  <div class="col-lg-3">
+                    <div class="order-actions">
+                      <button type="button" class="btn-outline-action" data-bs-toggle="collapse" data-bs-target="#account-track-1">Track</button>
+                      <button type="button" class="btn-filled-action" data-bs-toggle="collapse" data-bs-target="#account-det-1">Details</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="collapse stepper-collapse" id="account-track-1">
+                  <div class="h-stepper">
+                    <div class="h-step completed">
+                      <div class="h-step-dot"><i class="bi bi-check-lg"></i></div>
+                      <div class="h-step-label">Confirmed</div>
+                      <div class="h-step-date">Mar 12, 10:30 AM</div>
+                    </div>
+                    <div class="h-step completed">
+                      <div class="h-step-dot"><i class="bi bi-check-lg"></i></div>
+                      <div class="h-step-label">Processing</div>
+                      <div class="h-step-date">Mar 12, 2:45 PM</div>
+                    </div>
+                    <div class="h-step active">
+                      <div class="h-step-dot"><i class="bi bi-box-seam"></i></div>
+                      <div class="h-step-label">Packaging</div>
+                      <div class="h-step-date">Mar 12, 4:15 PM</div>
+                    </div>
+                    <div class="h-step">
+                      <div class="h-step-dot"><i class="bi bi-truck"></i></div>
+                      <div class="h-step-label">In Transit</div>
+                    </div>
+                    <div class="h-step">
+                      <div class="h-step-dot"><i class="bi bi-house-door"></i></div>
+                      <div class="h-step-label">Delivered</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="collapse detail-expand" id="account-det-1">
+                  <div class="row g-4">
+                    <div class="col-md-6">
+                      <div class="detail-block">
+                        <h5>Order Information</h5>
+                        <div class="detail-pair"><span class="dt">Payment</span><span class="dd">Credit Card (**** 4589)</span></div>
+                        <div class="detail-pair"><span class="dt">Shipping</span><span class="dd">Express Delivery (2-3 days)</span></div>
+                      </div>
+                      <div class="detail-block">
+                        <h5>Delivery Address</h5>
+                        <p>Elena Mitchell<br>742 Evergreen Terrace<br>Unit 12A<br>Chicago, IL 60614</p>
+                        <p class="muted">+1 (555) 472-8391</p>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="detail-block">
+                        <h5>Items (3)</h5>
+                        <div class="mini-item"><img src="assets/store/img/product/product-1.webp" alt="Product" loading="lazy">
+                          <div class="mini-item-info">
+                            <h6>Vestibulum ante ipsum primis</h6><span>SKU: PRD-001 · Qty: 1</span>
+                          </div><span class="mini-price">$899.99</span>
+                        </div>
+                        <div class="mini-item"><img src="assets/store/img/product/product-2.webp" alt="Product" loading="lazy">
+                          <div class="mini-item-info">
+                            <h6>Fusce dapibus tellus cursus</h6><span>SKU: PRD-002 · Qty: 2</span>
+                          </div><span class="mini-price">$599.95</span>
+                        </div>
+                        <div class="mini-item"><img src="assets/store/img/product/product-3.webp" alt="Product" loading="lazy">
+                          <div class="mini-item-info">
+                            <h6>Maecenas faucibus mollis</h6><span>SKU: PRD-003 · Qty: 1</span>
+                          </div><span class="mini-price">$129.99</span>
+                        </div>
+                      </div>
+                      <div class="detail-block">
+                        <h5>Price Summary</h5>
+                        <div class="sum-row"><span>Subtotal</span><span>$1,929.93</span></div>
+                        <div class="sum-row"><span>Shipping</span><span>$15.99</span></div>
+                        <div class="sum-row"><span>Tax</span><span>$159.98</span></div>
+                        <div class="sum-row total"><span>Total</span><span>$2,105.90</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- End Order 1 -->
+
+              <!-- Order 2 -->
+              <div class="order-row status-shipped" data-aos="fade-up" data-aos-delay="200">
+                <div class="row align-items-center g-3">
+                  <div class="col-lg-5">
+                    <div class="order-main">
+                      <div class="order-thumbs">
+                        <img src="assets/store/img/product/product-4.webp" alt="Product" loading="lazy">
+                        <img src="assets/store/img/product/product-5.webp" alt="Product" loading="lazy">
+                      </div>
+                      <div class="order-brief">
+                        <span class="order-ref">#ORD-2025-4756</span>
+                        <span class="order-when">Mar 5, 2025</span>
+                        <span class="order-qty">2 items</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-lg-2 text-center"><span class="status-pill shipped">Shipped</span></div>
+                  <div class="col-6 col-lg-2 text-center"><span class="order-total">$459.99</span></div>
+                  <div class="col-lg-3">
+                    <div class="order-actions">
+                      <button type="button" class="btn-outline-action" data-bs-toggle="collapse" data-bs-target="#account-track-2">Track</button>
+                      <button type="button" class="btn-filled-action" data-bs-toggle="collapse" data-bs-target="#account-det-2">Details</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="collapse stepper-collapse" id="account-track-2">
+                  <div class="h-stepper">
+                    <div class="h-step completed">
+                      <div class="h-step-dot"><i class="bi bi-check-lg"></i></div>
+                      <div class="h-step-label">Confirmed</div>
+                    </div>
+                    <div class="h-step completed">
+                      <div class="h-step-dot"><i class="bi bi-check-lg"></i></div>
+                      <div class="h-step-label">Processing</div>
+                    </div>
+                    <div class="h-step completed">
+                      <div class="h-step-dot"><i class="bi bi-check-lg"></i></div>
+                      <div class="h-step-label">Packaged</div>
+                    </div>
+                    <div class="h-step active">
+                      <div class="h-step-dot"><i class="bi bi-truck"></i></div>
+                      <div class="h-step-label">In Transit</div>
+                    </div>
+                    <div class="h-step">
+                      <div class="h-step-dot"><i class="bi bi-house-door"></i></div>
+                      <div class="h-step-label">Delivered</div>
+                    </div>
+                  </div>
+                  <div class="tracking-ref"><span>Tracking ID: </span><span class="ref-code">1Z999AA1234567890</span></div>
+                </div>
+                <div class="collapse detail-expand" id="account-det-2">
+                  <div class="row g-4">
+                    <div class="col-md-6">
+                      <div class="detail-block">
+                        <h5>Order Information</h5>
+                        <div class="detail-pair"><span class="dt">Payment</span><span class="dd">Credit Card (**** 7821)</span></div>
+                        <div class="detail-pair"><span class="dt">Shipping</span><span class="dd">Standard Shipping (3-5 days)</span></div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="detail-block">
+                        <h5>Items (2)</h5>
+                        <div class="mini-item"><img src="assets/store/img/product/product-4.webp" alt="Product" loading="lazy">
+                          <div class="mini-item-info">
+                            <h6>Praesent commodo cursus magna</h6><span>SKU: PRD-004 · Qty: 1</span>
+                          </div><span class="mini-price">$299.99</span>
+                        </div>
+                        <div class="mini-item"><img src="assets/store/img/product/product-5.webp" alt="Product" loading="lazy">
+                          <div class="mini-item-info">
+                            <h6>Donec ullamcorper nulla non</h6><span>SKU: PRD-005 · Qty: 1</span>
+                          </div><span class="mini-price">$159.99</span>
+                        </div>
+                      </div>
+                      <div class="detail-block">
+                        <h5>Price Summary</h5>
+                        <div class="sum-row"><span>Subtotal</span><span>$459.98</span></div>
+                        <div class="sum-row"><span>Shipping</span><span>$9.99</span></div>
+                        <div class="sum-row"><span>Tax</span><span>$38.02</span></div>
+                        <div class="sum-row total"><span>Total</span><span>$459.99</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- End Order 2 -->
+
+              <!-- Order 3 -->
+              <div class="order-row status-delivered" data-aos="fade-up" data-aos-delay="300">
+                <div class="row align-items-center g-3">
+                  <div class="col-lg-5">
+                    <div class="order-main">
+                      <div class="order-thumbs"><img src="assets/store/img/product/product-6.webp" alt="Product" loading="lazy"></div>
+                      <div class="order-brief"><span class="order-ref">#ORD-2025-4738</span><span class="order-when">Feb 28, 2025</span><span class="order-qty">1 item</span></div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-lg-2 text-center"><span class="status-pill delivered">Delivered</span></div>
+                  <div class="col-6 col-lg-2 text-center"><span class="order-total">$129.99</span></div>
+                  <div class="col-lg-3">
+                    <div class="order-actions">
+                      <button type="button" class="btn-success-action">Leave Review</button>
+                      <button type="button" class="btn-filled-action">Details</button>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- End Order 3 -->
+
+              <!-- Order 4 -->
+              <div class="order-row status-cancelled" data-aos="fade-up" data-aos-delay="400">
+                <div class="row align-items-center g-3">
+                  <div class="col-lg-5">
+                    <div class="order-main">
+                      <div class="order-thumbs">
+                        <img src="assets/store/img/product/product-7.webp" alt="Product" loading="lazy">
+                        <img src="assets/store/img/product/product-8.webp" alt="Product" loading="lazy">
+                        <img src="assets/store/img/product/product-9.webp" alt="Product" loading="lazy">
+                        <span class="extra-count">+2</span>
+                      </div>
+                      <div class="order-brief"><span class="order-ref">#ORD-2025-4720</span><span class="order-when">Feb 22, 2025</span><span class="order-qty">5 items</span></div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-lg-2 text-center"><span class="status-pill cancelled">Cancelled</span></div>
+                  <div class="col-6 col-lg-2 text-center"><span class="order-total">$1,299.99</span></div>
+                  <div class="col-lg-3">
+                    <div class="order-actions">
+                      <button type="button" class="btn-danger-action">Reorder</button>
+                      <button type="button" class="btn-filled-action">Details</button>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- End Order 4 -->
+            </div>
+
+            <div class="paging" data-aos="fade-up">
+              <button type="button" class="pg-arrow" disabled=""><i class="bi bi-arrow-left"></i></button>
+              <div class="pg-nums"><button type="button" class="active">1</button><button type="button">2</button><button type="button">3</button><span>…</span><button type="button">12</button></div>
+              <button type="button" class="pg-arrow"><i class="bi bi-arrow-right"></i></button>
+            </div>
+          </div>
+
+          <!-- Favorites Tab -->
+          <div class="tab-pane fade" id="account-tab-wishlist">
+            <div class="panel-header" data-aos="fade-up">
+              <h2>Saved Favorites</h2>
+              <div class="panel-tools"><button type="button" class="btn-filled-action">Move All to Cart</button></div>
+            </div>
+            <div class="fav-list">
+              <div class="fav-item" data-aos="fade-up" data-aos-delay="100">
+                <div class="row align-items-center g-3">
+                  <div class="col-md-2">
+                    <div class="fav-img"><img src="assets/store/img/product/product-1.webp" alt="Product" loading="lazy" class="img-fluid"><span class="discount-tag">-20%</span></div>
+                  </div>
+                  <div class="col-md-4">
+                    <h4 class="fav-title">Vestibulum ante ipsum primis</h4>
+                    <div class="star-row"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i><span>(4.5)</span></div>
+                  </div>
+                  <div class="col-6 col-md-2">
+                    <div class="fav-pricing"><span class="now">$79.99</span><span class="was">$99.99</span></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="fav-actions"><button type="button" class="btn-filled-action">Add to Cart</button><button type="button" class="btn-icon-remove" aria-label="Remove"><i class="bi bi-x-lg"></i></button></div>
+                  </div>
+                </div>
+              </div>
+              <div class="fav-item" data-aos="fade-up" data-aos-delay="200">
+                <div class="row align-items-center g-3">
+                  <div class="col-md-2">
+                    <div class="fav-img"><img src="assets/store/img/product/product-2.webp" alt="Product" loading="lazy" class="img-fluid"></div>
+                  </div>
+                  <div class="col-md-4">
+                    <h4 class="fav-title">Fusce dapibus tellus ac cursus</h4>
+                    <div class="star-row"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star"></i><span>(4.0)</span></div>
+                  </div>
+                  <div class="col-6 col-md-2">
+                    <div class="fav-pricing"><span class="now">$149.99</span></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="fav-actions"><button type="button" class="btn-filled-action">Add to Cart</button><button type="button" class="btn-icon-remove" aria-label="Remove"><i class="bi bi-x-lg"></i></button></div>
+                  </div>
+                </div>
+              </div>
+              <div class="fav-item is-unavailable" data-aos="fade-up" data-aos-delay="300">
+                <div class="row align-items-center g-3">
+                  <div class="col-md-2">
+                    <div class="fav-img"><img src="assets/store/img/product/product-3.webp" alt="Product" loading="lazy" class="img-fluid"><span class="oos-tag">Sold Out</span></div>
+                  </div>
+                  <div class="col-md-4">
+                    <h4 class="fav-title">Maecenas faucibus mollis interdum</h4>
+                    <div class="star-row"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><span>(5.0)</span></div>
+                  </div>
+                  <div class="col-6 col-md-2">
+                    <div class="fav-pricing"><span class="now">$199.99</span></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <div class="fav-actions"><button type="button" class="btn-outline-action">Notify Me</button><button type="button" class="btn-icon-remove" aria-label="Remove"><i class="bi bi-x-lg"></i></button></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payments Tab -->
+          <div class="tab-pane fade" id="account-tab-wallet">
+            <div class="panel-header" data-aos="fade-up">
+              <h2>Payment Methods</h2>
+              <div class="panel-tools"><button type="button" class="btn-filled-action"><i class="bi bi-plus-lg"></i> Add Card</button></div>
+            </div>
+            <div class="row g-4">
+              <div class="col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="cc-card is-default">
+                  <div class="cc-top"><i class="bi bi-credit-card-2-front"></i>
+                    <div class="cc-badges"><span class="badge-default">Default</span><span class="badge-type">Visa</span></div>
+                  </div>
+                  <div class="cc-number">•••• •••• •••• 4589</div>
+                  <div class="cc-meta">Expires 09/2026</div>
+                  <div class="cc-bottom"><button type="button" class="cc-btn"><i class="bi bi-pencil-square"></i> Edit</button><button type="button" class="cc-btn remove"><i class="bi bi-trash3"></i> Remove</button></div>
+                </div>
+              </div>
+              <div class="col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="cc-card">
+                  <div class="cc-top"><i class="bi bi-credit-card-2-front"></i>
+                    <div class="cc-badges"><span class="badge-type">Mastercard</span></div>
+                  </div>
+                  <div class="cc-number">•••• •••• •••• 7821</div>
+                  <div class="cc-meta">Expires 05/2025</div>
+                  <div class="cc-bottom"><button type="button" class="cc-btn"><i class="bi bi-pencil-square"></i> Edit</button><button type="button" class="cc-btn remove"><i class="bi bi-trash3"></i> Remove</button><button type="button" class="cc-btn default">Set Default</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feedback Tab -->
+          <div class="tab-pane fade" id="account-tab-reviews">
+            <div class="panel-header" data-aos="fade-up">
+              <h2>My Feedback</h2>
+              <div class="panel-tools">
+                <div class="dropdown"><button class="tool-filter" data-bs-toggle="dropdown"><i class="bi bi-sort-down"></i><span>Sort: Newest</span></button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#">Newest</a></li>
+                    <li><a class="dropdown-item" href="#">Highest Rating</a></li>
+                    <li><a class="dropdown-item" href="#">Lowest Rating</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="feedback-list">
+              <div class="feedback-item" data-aos="fade-up" data-aos-delay="100">
+                <div class="row g-3">
+                  <div class="col-auto"><img src="assets/store/img/product/product-1.webp" alt="Product" class="feedback-thumb" loading="lazy"></div>
+                  <div class="col">
+                    <div class="feedback-top">
+                      <h4>Vestibulum ante ipsum primis</h4><span class="feedback-date">Mar 8, 2025</span>
+                    </div>
+                    <div class="star-row"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><span>(5.0)</span></div>
+                    <p class="feedback-text">Cras justo odio, dapibus ut facilisis in, egestas eget quam. Nullam quis risus eget urna mollis ornare vel eu leo.</p>
+                    <div class="feedback-actions"><button type="button" class="fb-btn">Edit</button><button type="button" class="fb-btn remove">Delete</button></div>
+                  </div>
+                </div>
+              </div>
+              <div class="feedback-item" data-aos="fade-up" data-aos-delay="200">
+                <div class="row g-3">
+                  <div class="col-auto"><img src="assets/store/img/product/product-2.webp" alt="Product" class="feedback-thumb" loading="lazy"></div>
+                  <div class="col">
+                    <div class="feedback-top">
+                      <h4>Fusce dapibus tellus ac cursus</h4><span class="feedback-date">Mar 1, 2025</span>
+                    </div>
+                    <div class="star-row"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star"></i><span>(4.0)</span></div>
+                    <p class="feedback-text">Praesent commodo cursus magna, vel scelerisque nisl consectetur et. Aenean eu leo quam pellentesque ornare.</p>
+                    <div class="feedback-actions"><button type="button" class="fb-btn">Edit</button><button type="button" class="fb-btn remove">Delete</button></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Locations Tab -->
+          <div class="tab-pane fade" id="account-tab-addresses">
+            <div class="panel-header" data-aos="fade-up">
+              <h2>Saved Locations</h2>
+              <div class="panel-tools"><button type="button" class="btn-filled-action"><i class="bi bi-plus-lg"></i> New Address</button></div>
+            </div>
+            <div class="row g-4">
+              <div class="col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="loc-card is-default">
+                  <div class="loc-header">
+                    <div class="loc-icon"><i class="bi bi-house-heart"></i></div>
+                    <div>
+                      <h4>Home</h4><span class="default-label">Primary</span>
+                    </div>
+                  </div>
+                  <div class="loc-body">
+                    <p>1428 Elm Street<br>Apt 4B<br>Denver, CO 80202<br>United States</p>
+                    <div class="loc-contact"><span><i class="bi bi-person"></i> Elena Mitchell</span><span><i class="bi bi-phone"></i> +1 (555) 472-8391</span></div>
+                  </div>
+                  <div class="loc-footer"><button type="button" class="cc-btn"><i class="bi bi-pencil-square"></i> Edit</button><button type="button" class="cc-btn remove"><i class="bi bi-trash3"></i> Remove</button></div>
+                </div>
+              </div>
+              <div class="col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="loc-card">
+                  <div class="loc-header">
+                    <div class="loc-icon"><i class="bi bi-building"></i></div>
+                    <div>
+                      <h4>Workplace</h4>
+                    </div>
+                  </div>
+                  <div class="loc-body">
+                    <p>350 Fifth Avenue<br>Suite 1500<br>Portland, OR 97201<br>United States</p>
+                    <div class="loc-contact"><span><i class="bi bi-person"></i> Elena Mitchell</span><span><i class="bi bi-phone"></i> +1 (555) 639-2105</span></div>
+                  </div>
+                  <div class="loc-footer"><button type="button" class="cc-btn"><i class="bi bi-pencil-square"></i> Edit</button><button type="button" class="cc-btn remove"><i class="bi bi-trash3"></i> Remove</button><button type="button" class="cc-btn default">Set Primary</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preferences Tab -->
+          <div class="tab-pane fade" id="account-tab-settings">
+            <div class="panel-header" data-aos="fade-up">
+              <h2>Account Preferences</h2>
+            </div>
+            <div class="prefs-grid">
+              <div class="pref-section" data-aos="fade-up">
+                <h3><i class="bi bi-person-circle"></i> Personal Details</h3>
+                <form class="php-email-form pref-form" action="forms/contact.php">
+                  <div class="row g-3">
+                    <div class="col-md-6"><label for="pfName" class="form-label">First Name</label><input type="text" class="form-control" id="pfName" name="first-name" value="Elena" required=""></div>
+                    <div class="col-md-6"><label for="plName" class="form-label">Last Name</label><input type="text" class="form-control" id="plName" name="last-name" value="Mitchell" required=""></div>
+                    <div class="col-md-6"><label for="pEmail" class="form-label">Email Address</label><input type="email" class="form-control" id="pEmail" name="email" value="elena@example.com" required=""></div>
+                    <div class="col-md-6"><label for="pPhone" class="form-label">Phone Number</label><input type="tel" class="form-control" id="pPhone" name="phone" value="+1 (555) 472-8391"></div>
+                  </div>
+                  <div class="pref-form-footer">
+                    <div class="loading">Loading</div>
+                    <div class="error-message"></div>
+                    <div class="sent-message">Your details have been updated!</div><button type="submit" class="btn-filled-action">Save Changes</button>
+                  </div>
+                </form>
+              </div>
+              <div class="pref-section" data-aos="fade-up" data-aos-delay="100">
+                <h3><i class="bi bi-bell"></i> Notification Settings</h3>
+                <div class="toggle-list">
+                  <div class="toggle-row">
+                    <div class="toggle-info">
+                      <h4>Order Notifications</h4>
+                      <p>Stay updated on your order progress</p>
+                    </div>
+                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="notifOrders" checked=""></div>
+                  </div>
+                  <div class="toggle-row">
+                    <div class="toggle-info">
+                      <h4>Deals &amp; Offers</h4>
+                      <p>Get notified about special deals and promotions</p>
+                    </div>
+                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="notifDeals"></div>
+                  </div>
+                  <div class="toggle-row">
+                    <div class="toggle-info">
+                      <h4>Weekly Digest</h4>
+                      <p>Receive a curated weekly email summary</p>
+                    </div>
+                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="notifDigest" checked=""></div>
+                  </div>
+                </div>
+              </div>
+              <div class="pref-section" data-aos="fade-up" data-aos-delay="200">
+                <h3><i class="bi bi-shield-lock"></i> Security</h3>
+                <form class="php-email-form pref-form" action="forms/contact.php">
+                  <div class="row g-3">
+                    <div class="col-12"><label for="curPwd" class="form-label">Current Password</label><input type="password" class="form-control" id="curPwd" name="current-password" required=""></div>
+                    <div class="col-md-6"><label for="newPwd" class="form-label">New Password</label><input type="password" class="form-control" id="newPwd" name="new-password" required=""></div>
+                    <div class="col-md-6"><label for="confPwd" class="form-label">Confirm Password</label><input type="password" class="form-control" id="confPwd" name="confirm-password" required=""></div>
+                  </div>
+                  <div class="pref-form-footer">
+                    <div class="loading">Loading</div>
+                    <div class="error-message"></div>
+                    <div class="sent-message">Password changed successfully!</div><button type="submit" class="btn-filled-action">Update Password</button>
+                  </div>
+                </form>
+              </div>
+              <div class="pref-section danger" data-aos="fade-up" data-aos-delay="300">
+                <h3><i class="bi bi-exclamation-triangle"></i> Danger Zone</h3>
+                <div class="danger-body">
+                  <p>Permanently remove your account and all associated data. This action cannot be reversed.</p><button type="button" class="btn-danger-action">Delete My Account</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section><!-- /Account Section -->
+
+ 
+
+</BaseLayout>

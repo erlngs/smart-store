@@ -1,0 +1,122 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="contact - SmartStore" bodyClass="contact">
+
+    <!-- Contact 2 Section -->
+    <section id="contact-2" class="contact-2 section">
+
+      <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+        <div class="row g-0 contact-wrapper">
+
+          <!-- Left Panel: Contact Details -->
+          <div class="col-lg-4" data-aos="fade-right" data-aos-delay="150">
+            <div class="details-panel">
+              <h3>Let's Start a Conversation</h3>
+              <p class="panel-intro">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.</p>
+
+              <div class="detail-item">
+                <div class="detail-icon">
+                  <i class="bi bi-geo-alt-fill"></i>
+                </div>
+                <div class="detail-text">
+                  <h5>Visit Us</h5>
+                  <p>927 Birchwood Lane, Austin, TX 78701</p>
+                </div>
+              </div><!-- End Detail Item -->
+
+              <div class="detail-item">
+                <div class="detail-icon">
+                  <i class="bi bi-envelope-fill"></i>
+                </div>
+                <div class="detail-text">
+                  <h5>Write to Us</h5>
+                  <p>hello@example.com</p>
+                  <p>support@example.com</p>
+                </div>
+              </div><!-- End Detail Item -->
+
+              <div class="detail-item">
+                <div class="detail-icon">
+                  <i class="bi bi-clock-fill"></i>
+                </div>
+                <div class="detail-text">
+                  <h5>Working Hours</h5>
+                  <p>Mon - Fri: 8 AM - 7 PM</p>
+                  <p>Sat: 10 AM - 3 PM</p>
+                </div>
+              </div><!-- End Detail Item -->
+
+              <div class="social-links">
+                <a href="#"><i class="bi bi-twitter-x"></i></a>
+                <a href="#"><i class="bi bi-facebook"></i></a>
+                <a href="#"><i class="bi bi-linkedin"></i></a>
+                <a href="#"><i class="bi bi-instagram"></i></a>
+              </div>
+            </div>
+          </div><!-- End Left Panel -->
+
+          <!-- Right Panel: Contact Form -->
+          <div class="col-lg-8" data-aos="fade-left" data-aos-delay="250">
+            <div class="form-panel">
+              <h3>Send a Message</h3>
+              <p class="form-subtitle">Cras ultricies ligula sed magna dictum porta. Donec rutrum congue leo eget malesuada.</p>
+
+              <form action="forms/contact.php" method="post" class="php-email-form">
+                <div class="row g-4">
+                  <div class="col-md-6">
+                    <label class="form-label">Your Name</label>
+                    <input type="text" class="form-control" name="name" placeholder="Full Name" required="" autocomplete="name">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" name="email" placeholder="your@email.com" required="" autocomplete="email">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" name="phone" placeholder="+1 (555) 000-0000" autocomplete="tel">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Subject</label>
+                    <input type="text" class="form-control" name="subject" placeholder="How can we help?" required="">
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label">Your Message</label>
+                    <textarea class="form-control" name="message" rows="6" placeholder="Describe your inquiry in detail..." required=""></textarea>
+                  </div>
+
+                  <div class="col-12">
+                    <div class="loading">Loading</div>
+                    <div class="error-message"></div>
+                    <div class="sent-message">Your message has been sent. Thank you!</div>
+                  </div>
+
+                  <div class="col-12">
+                    <button type="submit" class="btn-send">
+                      <span>Submit Message</span>
+                      <i class="bi bi-arrow-right"></i>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div><!-- End Right Panel -->
+
+        </div><!-- End Contact Wrapper -->
+
+      </div>
+
+      <!-- Map Strip -->
+      <div class="map-strip" data-aos="zoom-in" data-aos-delay="200">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d48389.78314118045!2d-74.006138!3d40.710059!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a22a3bda30d%3A0xb89d1fe6bc499443!2sDowntown%20Conference%20Center!5e0!3m2!1sen!2sus!4v1676961268712!5m2!1sen!2sus" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+
+    </section><!-- /Contact 2 Section -->
+
+</BaseLayout>
