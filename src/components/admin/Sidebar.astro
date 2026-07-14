@@ -1,0 +1,145 @@
+---
+// src/components/admin/Sidebar.astro
+---
+
+<aside class="sidebar">
+  <!-- Sidebar Header -->
+  <div class="sidebar-header">
+    <a href="/admin" class="sidebar-logo">
+      <div class="sidebar-logo-icon">
+        <img src="/assets/admin/img/logo.webp" alt="SmartStore">
+      </div>
+      <span class="sidebar-logo-text">SmartStore</span>
+    </a>
+    <button class="sidebar-close">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar-nav">
+    <ul class="nav-menu">
+
+      <!-- Dashboard -->
+      <li class="nav-item">
+        <a class="nav-link active" href="/admin">
+          <span class="nav-icon"><i class="ph-light ph-squares-four"></i></span>
+          <span class="nav-text">Dashboard</span>
+        </a>
+      </li>
+
+      <!-- Products -->
+      <li class="nav-item">
+        <a class="nav-link" href="/admin/products">
+          <span class="nav-icon"><i class="ph-light ph-box"></i></span>
+          <span class="nav-text">Products</span>
+        </a>
+      </li>
+
+      <!-- Orders -->
+      <li class="nav-item">
+        <a class="nav-link" href="/admin/orders">
+          <span class="nav-icon"><i class="ph-light ph-shopping-cart"></i></span>
+          <span class="nav-text">Orders</span>
+          <span class="badge bg-danger ms-auto" id="orderBadge">0</span>
+        </a>
+      </li>
+
+      <!-- Users -->
+      <li class="nav-item">
+        <a class="nav-link" href="/admin/users">
+          <span class="nav-icon"><i class="ph-light ph-users-three"></i></span>
+          <span class="nav-text">Users</span>
+        </a>
+      </li>
+
+      <hr class="sidebar-divider" />
+
+      <!-- Settings -->
+      <li class="nav-item">
+        <a class="nav-link" href="/admin/settings">
+          <span class="nav-icon"><i class="ph-light ph-gear"></i></span>
+          <span class="nav-text">Settings</span>
+        </a>
+      </li>
+
+    </ul>
+  </nav>
+
+  <!-- Sidebar Footer -->
+  <div class="sidebar-footer">
+    <div class="sidebar-footer-user">
+      <a href="/admin/profile" class="sidebar-footer-profile">
+        <img src="/assets/admin/img/profile-img.webp" alt="User" class="sidebar-footer-avatar">
+        <div class="sidebar-footer-info">
+          <div class="sidebar-footer-name" id="userName">Admin</div>
+          <div class="sidebar-footer-role">Administrator</div>
+        </div>
+      </a>
+      <div class="sidebar-footer-actions">
+        <button id="logoutBtn" class="sidebar-footer-action sidebar-footer-logout" title="Logout">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Sidebar Overlay (Mobile) -->
+<div class="sidebar-overlay"></div>
+
+<script>
+  import { supabase } from "@/lib/supabase";
+
+  // Logout
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await supabase.auth.signOut();
+        window.location.href = '/admin/login';
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    });
+  }
+
+  // Get user name
+  async function getUserName() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+      
+      const userNameEl = document.getElementById('userName');
+      if (userNameEl) {
+        userNameEl.textContent = profile?.full_name || user.email?.split('@')[0] || 'Admin';
+      }
+    }
+  }
+
+  getUserName();
+
+  // Get pending orders count
+  async function getOrderCount() {
+    const { count, error } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    
+    const badge = document.getElementById('orderBadge');
+    if (badge) {
+      if (count && count > 0) {
+        badge.textContent = String(count); // Convert to string
+        badge.style.display = 'inline';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  }
+
+  getOrderCount();
+</script>

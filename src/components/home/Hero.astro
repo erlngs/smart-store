@@ -1,102 +1,143 @@
+---
+// src/components/home/Hero.astro
+import { supabase } from "../../lib/supabase";
+
+// Ambil 3 produk untuk hero
+const { data: heroProducts } = await supabase
+  .from('products')
+  .select('*')
+  .eq('is_active', true)
+  .limit(3);
+---
+
 <section id="hero" class="hero section">
+  <div class="container" data-aos="fade-up" data-aos-delay="100">
+    <div class="row justify-content-center text-center">
+      <div class="col-lg-8">
+        <div class="headline-block" data-aos="zoom-in" data-aos-delay="100">
+          <span class="tagline">Premium Collection</span>
+          <h1 class="main-heading">Elevate Your Everyday Style</h1>
+          <p class="lead-text">Temukan produk berkualitas terbaik hanya di SmartStore</p>
+          <div class="cta-group" data-aos="fade-up" data-aos-delay="200">
+            <a href="/category" class="btn-explore">Explore Collection</a>
+            <a href="/category" class="btn-outline-explore"><i class="bi bi-grid me-2"></i>View Categories</a>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <div class="container" data-aos="fade-up" data-aos-delay="100">
-
-        <div class="row justify-content-center text-center">
-          <div class="col-lg-8">
-            <div class="headline-block" data-aos="zoom-in" data-aos-delay="100">
-              <span class="tagline">Premium Collection</span>
-              <h1 class="main-heading">Elevate Your Everyday Style</h1>
-              <p class="lead-text">Curabitur aliquet quam id dui posuere blandit. Nulla porttitor accumsan tincidunt. Praesent sapien massa, convallis a pellentesque nec, egestas non nisi.</p>
-              <div class="cta-group" data-aos="fade-up" data-aos-delay="200">
-                <a href="#products" class="btn-explore">Explore Collection</a>
-                <a href="#categories" class="btn-outline-explore"><i class="bi bi-grid me-2"></i>View Categories</a>
+    <div class="row g-4 justify-content-center mt-4">
+      {heroProducts && heroProducts.length > 0 ? (
+        heroProducts.map((product, index) => (
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay={200 + (index * 100)}>
+            <div class="showcase-card">
+              <div class="card-visual">
+                <img 
+                  src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} 
+                  class="img-fluid" 
+                  alt={product.name}
+                />
+                <span class="label">{product.discount > 0 ? `${product.discount}% Off` : 'Top Rated'}</span>
+              </div>
+              <div class="card-details">
+                <h4>{product.name}</h4>
+                <div class="pricing">
+                  {product.discount > 0 ? (
+                    <>
+                      <span class="now">Rp {(product.price * (1 - product.discount / 100)).toLocaleString('id-ID')}</span>
+                      <span class="was">Rp {product.price.toLocaleString('id-ID')}</span>
+                    </>
+                  ) : (
+                    <span class="now">Rp {product.price.toLocaleString('id-ID')}</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="row g-4 justify-content-center mt-4">
+        ))
+      ) : (
+        // Fallback jika belum ada produk
+        <>
           <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
             <div class="showcase-card">
               <div class="card-visual">
-                <img src="assets/store/img/product/product-4.webp" class="img-fluid" alt="Product">
+                <img src="/assets/store/img/product/product-4.webp" class="img-fluid" alt="Product">
                 <span class="label">Top Rated</span>
               </div>
               <div class="card-details">
                 <h4>Signature Audio Device</h4>
                 <div class="pricing">
-                  <span class="now">$249</span>
-                  <span class="was">$349</span>
+                  <span class="now">Rp 249.000</span>
+                  <span class="was">Rp 349.000</span>
                 </div>
               </div>
-            </div><!-- End Showcase Card -->
+            </div>
           </div>
           <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
             <div class="showcase-card elevated">
               <div class="card-visual">
-                <img src="assets/store/img/product/product-8.webp" class="img-fluid" alt="Product">
+                <img src="/assets/store/img/product/product-8.webp" class="img-fluid" alt="Product">
                 <span class="label hot">Most Popular</span>
               </div>
               <div class="card-details">
                 <h4>Elite Smart Accessory</h4>
                 <div class="pricing">
-                  <span class="now">$179</span>
-                  <span class="was">$259</span>
+                  <span class="now">Rp 179.000</span>
+                  <span class="was">Rp 259.000</span>
                 </div>
               </div>
-            </div><!-- End Showcase Card -->
+            </div>
           </div>
           <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="400">
             <div class="showcase-card">
               <div class="card-visual">
-                <img src="assets/store/img/product/product-11.webp" class="img-fluid" alt="Product">
+                <img src="/assets/store/img/product/product-11.webp" class="img-fluid" alt="Product">
                 <span class="label">New Arrival</span>
               </div>
               <div class="card-details">
                 <h4>Modern Lifestyle Gear</h4>
                 <div class="pricing">
-                  <span class="now">$129</span>
-                  <span class="was">$189</span>
+                  <span class="now">Rp 129.000</span>
+                  <span class="was">Rp 189.000</span>
                 </div>
               </div>
-            </div><!-- End Showcase Card -->
+            </div>
           </div>
-        </div>
+        </>
+      )}
+    </div>
 
-        <div class="row mt-5">
-          <div class="col-12" data-aos="fade-up" data-aos-delay="500">
-            <div class="perks-strip">
-              <div class="row g-3 justify-content-center">
-                <div class="col-lg-3 col-md-6 col-6">
-                  <div class="perk">
-                    <i class="bi bi-truck"></i>
-                    <span>Complimentary Delivery</span>
-                  </div>
-                </div>
-                <div class="col-lg-3 col-md-6 col-6">
-                  <div class="perk">
-                    <i class="bi bi-shield-check"></i>
-                    <span>Certified Quality</span>
-                  </div>
-                </div>
-                <div class="col-lg-3 col-md-6 col-6">
-                  <div class="perk">
-                    <i class="bi bi-chat-dots"></i>
-                    <span>Always-On Assistance</span>
-                  </div>
-                </div>
-                <div class="col-lg-3 col-md-6 col-6">
-                  <div class="perk">
-                    <i class="bi bi-arrow-return-left"></i>
-                    <span>Hassle-Free Returns</span>
-                  </div>
-                </div>
+    <div class="row mt-5">
+      <div class="col-12" data-aos="fade-up" data-aos-delay="500">
+        <div class="perks-strip">
+          <div class="row g-3 justify-content-center">
+            <div class="col-lg-3 col-md-6 col-6">
+              <div class="perk">
+                <i class="bi bi-truck"></i>
+                <span>Complimentary Delivery</span>
               </div>
-            </div><!-- End Perks Strip -->
+            </div>
+            <div class="col-lg-3 col-md-6 col-6">
+              <div class="perk">
+                <i class="bi bi-shield-check"></i>
+                <span>Certified Quality</span>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6 col-6">
+              <div class="perk">
+                <i class="bi bi-chat-dots"></i>
+                <span>Always-On Assistance</span>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6 col-6">
+              <div class="perk">
+                <i class="bi bi-arrow-return-left"></i>
+                <span>Hassle-Free Returns</span>
+              </div>
+            </div>
           </div>
         </div>
-
       </div>
-
-    </section><!-- /Hero Section -->
+    </div>
+  </div>
+</section>

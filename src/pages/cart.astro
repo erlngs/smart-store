@@ -1,135 +1,154 @@
 ---
+// @ts-nocheck
+// src/pages/cart.astro
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { supabase } from "../lib/supabase";
+
+// Cek session
+const { data: { session } } = await supabase.auth.getSession();
+
+let cartItems = [];
+let subtotal = 0;
+let totalItems = 0;
+let shippingCost = 0;
+let tax = 0;
+let grandTotal = 0;
+
+if (session) {
+  // Ambil data cart dengan join ke products
+  const { data, error } = await supabase
+    .from('cart')
+    .select(`
+      id,
+      quantity,
+      product_id,
+      products (
+        id,
+        name,
+        slug,
+        price,
+        discount,
+        image_url,
+        stock
+      )
+    `)
+    .eq('user_id', session.user.id);
+
+  if (!error && data) {
+    cartItems = data;
+    
+    // Hitung subtotal
+    cartItems.forEach((item) => {
+      const price = item.products.price;
+      const discount = item.products.discount || 0;
+      const discountedPrice = price * (1 - discount / 100);
+      subtotal += discountedPrice * item.quantity;
+      totalItems += item.quantity;
+    });
+  }
+
+  // Shipping cost (flat rate 20.000)
+  shippingCost = 20000;
+  
+  // Tax (11% dari subtotal)
+  tax = subtotal * 0.11;
+  
+  // Grand total
+  grandTotal = subtotal + shippingCost + tax;
+}
 ---
 
-<BaseLayout title="cart - SmartStore" bodyClass="cart">
+<BaseLayout title="Cart - SmartStore" bodyClass="cart">
 
-    <!-- Cart Section -->
-    <section id="cart" class="cart section">
+  <!-- Cart Section -->
+  <section id="cart" class="cart section">
 
-      <!-- Section Title -->
-      <div class="container section-title" data-aos="fade-up">
-        <h2>Cart</h2>
-        <p>Necessitatibus eius consequatur ex aliquid fuga eum quidem sint consectetur velit</p>
-      </div><!-- End Section Title -->
+    <!-- Section Title -->
+    <div class="container section-title" data-aos="fade-up">
+      <h2>Cart</h2>
+      <p>Keranjang belanja Anda di SmartStore</p>
+    </div>
 
-      <div class="container" data-aos="fade-up" data-aos-delay="100">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
 
+      {!session ? (
+        <div class="text-center py-5">
+          <div class="empty-cart-icon mb-4">
+            <i class="bi bi-cart3" style="font-size: 80px; color: #dee2e6;"></i>
+          </div>
+          <h3>Your Cart is Empty</h3>
+          <p class="text-muted">Please login to view your cart items.</p>
+          <div class="mt-3">
+            <a href="/login" class="btn btn-primary me-2">Login</a>
+            <a href="/category" class="btn btn-outline-primary">Continue Shopping</a>
+          </div>
+        </div>
+      ) : cartItems && cartItems.length > 0 ? (
         <div class="row gy-4">
           <div class="col-lg-7" data-aos="fade-right" data-aos-delay="200">
 
-            <div class="items-list">
-
-              <!-- Cart Item 1 -->
-              <div class="cart-item" data-aos="zoom-in" data-aos-delay="150">
-                <button class="dismiss-btn remove-item" type="button">
-                  <i class="bi bi-x-lg"></i>
-                </button>
-                <div class="row g-0 align-items-center">
-                  <div class="col-md-3 col-4">
-                    <div class="item-thumb">
-                      <img src="assets/store/img/product/product-2.webp" alt="Product" class="img-fluid" loading="lazy">
-                    </div>
-                  </div>
-                  <div class="col-md-9 col-8">
-                    <div class="item-body">
-                      <h6 class="item-name">Vestibulum ante ipsum primis</h6>
-                      <div class="item-attributes">
-                        <span class="attribute-badge">Color: Charcoal</span>
-                        <span class="attribute-badge">Size: M</span>
+            <div class="items-list" id="cartItemsList">
+              {cartItems.map((item) => {
+                const price = item.products.price;
+                const discount = item.products.discount || 0;
+                const discountedPrice = price * (1 - discount / 100);
+                const itemTotal = discountedPrice * item.quantity;
+                
+                return (
+                  <div class="cart-item" data-cart-id={item.id} data-aos="zoom-in">
+                    <button class="dismiss-btn remove-item" type="button" data-cart-id={item.id}>
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                    <div class="row g-0 align-items-center">
+                      <div class="col-md-3 col-4">
+                        <div class="item-thumb">
+                          <img src={item.products.image_url || '/assets/store/img/product/product-placeholder.webp'} alt={item.products.name} class="img-fluid" loading="lazy">
+                        </div>
                       </div>
-                      <div class="item-bottom">
-                        <div class="item-pricing">
-                          <span class="unit-price">$89.99</span>
+                      <div class="col-md-9 col-8">
+                        <div class="item-body">
+                          <h6 class="item-name">
+                            <a href={`/product-details?slug=${item.products.slug}`}>{item.products.name}</a>
+                          </h6>
+                          <div class="item-attributes">
+                            {discount > 0 && (
+                              <span class="attribute-badge" style="background: #dc3545; color: white;">Save {discount}%</span>
+                            )}
+                            <span class="attribute-badge">Stock: {item.products.stock || 0}</span>
+                          </div>
+                          <div class="item-bottom">
+                            <div class="item-pricing">
+                              {discount > 0 ? (
+                                <>
+                                  <span class="unit-price">Rp {discountedPrice.toLocaleString('id-ID')}</span>
+                                  <span class="was-price">Rp {price.toLocaleString('id-ID')}</span>
+                                </>
+                              ) : (
+                                <span class="unit-price">Rp {price.toLocaleString('id-ID')}</span>
+                              )}
+                            </div>
+                            <div class="quantity-selector">
+                              <button class="quantity-btn decrease" data-cart-id={item.id}><i class="bi bi-dash"></i></button>
+                              <input type="number" class="quantity-input" value={item.quantity} min="1" max={item.products.stock || 10} data-cart-id={item.id}>
+                              <button class="quantity-btn increase" data-cart-id={item.id}><i class="bi bi-plus"></i></button>
+                            </div>
+                            <div class="line-total" id={`item-total-${item.id}`}>
+                              Rp {itemTotal.toLocaleString('id-ID')}
+                            </div>
+                          </div>
                         </div>
-                        <div class="quantity-selector">
-                          <button class="quantity-btn decrease"><i class="bi bi-dash"></i></button>
-                          <input type="number" class="quantity-input" value="1" min="1" max="10">
-                          <button class="quantity-btn increase"><i class="bi bi-plus"></i></button>
-                        </div>
-                        <div class="line-total">$89.99</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div><!-- End Cart Item -->
-
-              <!-- Cart Item 2 -->
-              <div class="cart-item" data-aos="zoom-in" data-aos-delay="250">
-                <button class="dismiss-btn remove-item" type="button">
-                  <i class="bi bi-x-lg"></i>
-                </button>
-                <div class="row g-0 align-items-center">
-                  <div class="col-md-3 col-4">
-                    <div class="item-thumb">
-                      <img src="assets/store/img/product/product-6.webp" alt="Product" class="img-fluid" loading="lazy">
-                    </div>
-                  </div>
-                  <div class="col-md-9 col-8">
-                    <div class="item-body">
-                      <h6 class="item-name">Pellentesque habitant morbi</h6>
-                      <div class="item-attributes">
-                        <span class="attribute-badge">Color: Ivory</span>
-                        <span class="attribute-badge">Size: L</span>
-                      </div>
-                      <div class="item-bottom">
-                        <div class="item-pricing">
-                          <span class="unit-price">$64.99</span>
-                          <span class="was-price">$79.99</span>
-                        </div>
-                        <div class="quantity-selector">
-                          <button class="quantity-btn decrease"><i class="bi bi-dash"></i></button>
-                          <input type="number" class="quantity-input" value="2" min="1" max="10">
-                          <button class="quantity-btn increase"><i class="bi bi-plus"></i></button>
-                        </div>
-                        <div class="line-total">$129.98</div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div><!-- End Cart Item -->
-
-              <!-- Cart Item 3 -->
-              <div class="cart-item" data-aos="zoom-in" data-aos-delay="350">
-                <button class="dismiss-btn remove-item" type="button">
-                  <i class="bi bi-x-lg"></i>
-                </button>
-                <div class="row g-0 align-items-center">
-                  <div class="col-md-3 col-4">
-                    <div class="item-thumb">
-                      <img src="assets/store/img/product/product-8.webp" alt="Product" class="img-fluid" loading="lazy">
-                    </div>
-                  </div>
-                  <div class="col-md-9 col-8">
-                    <div class="item-body">
-                      <h6 class="item-name">Maecenas tempus tellus eget</h6>
-                      <div class="item-attributes">
-                        <span class="attribute-badge">Color: Navy</span>
-                        <span class="attribute-badge">Size: S</span>
-                      </div>
-                      <div class="item-bottom">
-                        <div class="item-pricing">
-                          <span class="unit-price">$49.99</span>
-                        </div>
-                        <div class="quantity-selector">
-                          <button class="quantity-btn decrease"><i class="bi bi-dash"></i></button>
-                          <input type="number" class="quantity-input" value="1" min="1" max="10">
-                          <button class="quantity-btn increase"><i class="bi bi-plus"></i></button>
-                        </div>
-                        <div class="line-total">$49.99</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div><!-- End Cart Item -->
-
+                );
+              })}
             </div>
 
             <div class="cart-toolbar" data-aos="fade-up" data-aos-delay="300">
-              <a href="#" class="toolbar-link">
+              <a href="/category" class="toolbar-link">
                 <i class="bi bi-arrow-left"></i> Continue Shopping
               </a>
-              <button class="toolbar-clear" type="button">
+              <button class="toolbar-clear" type="button" id="emptyCartBtn">
                 <i class="bi bi-trash3"></i> Empty Cart
               </button>
             </div>
@@ -155,45 +174,36 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
                 <div class="cost-breakdown">
                   <div class="cost-row">
-                    <span class="cost-label">Subtotal (4 items)</span>
-                    <span class="cost-amount">$269.96</span>
+                    <span class="cost-label">Subtotal ({totalItems} items)</span>
+                    <span class="cost-amount" id="subtotalDisplay">Rp {subtotal.toLocaleString('id-ID')}</span>
                   </div>
 
                   <div class="cost-row shipping-row">
                     <span class="cost-label">Delivery</span>
                     <div class="delivery-choices">
                       <div class="form-check">
-                        <input class="form-check-input" type="radio" name="delivery" id="del-standard" checked="">
-                        <label class="form-check-label" for="del-standard">Standard - $4.99</label>
+                        <input class="form-check-input" type="radio" name="delivery" id="del-standard" checked value="20000">
+                        <label class="form-check-label" for="del-standard">Standard - Rp 20.000</label>
                       </div>
                       <div class="form-check">
-                        <input class="form-check-input" type="radio" name="delivery" id="del-express">
-                        <label class="form-check-label" for="del-express">Express - $12.99</label>
-                      </div>
-                      <div class="form-check">
-                        <input class="form-check-input" type="radio" name="delivery" id="del-free">
-                        <label class="form-check-label" for="del-free">Free (Orders $300+)</label>
+                        <input class="form-check-input" type="radio" name="delivery" id="del-express" value="50000">
+                        <label class="form-check-label" for="del-express">Express - Rp 50.000</label>
                       </div>
                     </div>
                   </div>
 
                   <div class="cost-row">
-                    <span class="cost-label">Estimated Tax</span>
-                    <span class="cost-amount">$27.00</span>
-                  </div>
-
-                  <div class="cost-row savings">
-                    <span class="cost-label">Savings</span>
-                    <span class="cost-amount">-$0.00</span>
+                    <span class="cost-label">Tax (11%)</span>
+                    <span class="cost-amount" id="taxDisplay">Rp {tax.toLocaleString('id-ID')}</span>
                   </div>
                 </div>
 
                 <div class="grand-total">
                   <span>Grand Total</span>
-                  <span class="total-amount">$301.95</span>
+                  <span class="total-amount" id="grandTotalDisplay">Rp {grandTotal.toLocaleString('id-ID')}</span>
                 </div>
 
-                <a href="#" class="btn checkout-btn">
+                <a href="/checkout" class="btn checkout-btn">
                   Complete Purchase <i class="bi bi-cart-check"></i>
                 </a>
 
@@ -211,8 +221,124 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             </div>
           </div>
         </div>
+      ) : (
+        <div class="text-center py-5">
+          <div class="empty-cart-icon mb-4">
+            <i class="bi bi-cart3" style="font-size: 80px; color: #dee2e6;"></i>
+          </div>
+          <h3>Your Cart is Empty</h3>
+          <p class="text-muted">Start shopping and add items to your cart.</p>
+          <div class="mt-3">
+            <a href="/category" class="btn btn-primary">Start Shopping</a>
+          </div>
+        </div>
+      )}
 
-      </div>
+    </div>
 
-    </section><!-- /Cart Section -->
+  </section>
+
+  <script>
+    import { supabase } from "@/lib/supabase";
+
+    // Update quantity
+    document.querySelectorAll('.quantity-btn').forEach((btn) => {
+      btn.addEventListener('click', async function() {
+        const cartId = this.dataset.cartId;
+        const input = document.querySelector(`.quantity-input[data-cart-id="${cartId}"]`);
+        if (!input) return;
+        
+        let val = parseInt(input.value) || 1;
+        const max = parseInt(input.getAttribute('max')) || 99;
+        
+        if (this.classList.contains('decrease')) {
+          if (val > 1) val--;
+        } else if (this.classList.contains('increase')) {
+          if (val < max) val++;
+        }
+        
+        input.value = val;
+        
+        // Update di database
+        const { error } = await supabase
+          .from('cart')
+          .update({ quantity: val })
+          .eq('id', cartId);
+        
+        if (!error) {
+          // Refresh halaman
+          window.location.reload();
+        }
+      });
+    });
+
+    // Manual input quantity
+    document.querySelectorAll('.quantity-input').forEach((input) => {
+      input.addEventListener('change', async function() {
+        const cartId = this.dataset.cartId;
+        const val = parseInt(this.value) || 1;
+        const max = parseInt(this.getAttribute('max')) || 99;
+        
+        if (val < 1) this.value = 1;
+        if (val > max) this.value = max;
+        
+        const { error } = await supabase
+          .from('cart')
+          .update({ quantity: parseInt(this.value) })
+          .eq('id', cartId);
+        
+        if (!error) {
+          window.location.reload();
+        }
+      });
+    });
+
+    // Remove item
+    document.querySelectorAll('.remove-item').forEach((btn) => {
+      btn.addEventListener('click', async function() {
+        const cartId = this.dataset.cartId;
+        
+        if (confirm('Hapus produk dari keranjang?')) {
+          const { error } = await supabase
+            .from('cart')
+            .delete()
+            .eq('id', cartId);
+          
+          if (!error) {
+            window.location.reload();
+          }
+        }
+      });
+    });
+
+    // Empty cart
+    document.getElementById('emptyCartBtn')?.addEventListener('click', async function() {
+      if (confirm('Kosongkan semua keranjang?')) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { error } = await supabase
+            .from('cart')
+            .delete()
+            .eq('user_id', session.user.id);
+          
+          if (!error) {
+            window.location.reload();
+          }
+        }
+      }
+    });
+
+    // Update shipping cost
+    document.querySelectorAll('input[name="delivery"]').forEach((radio) => {
+      radio.addEventListener('change', function() {
+        const shippingCost = parseInt(this.value) || 0;
+        const subtotal = parseInt(document.getElementById('subtotalDisplay').textContent.replace(/[^0-9]/g, '')) || 0;
+        const tax = Math.round(subtotal * 0.11);
+        const grandTotal = subtotal + shippingCost + tax;
+        
+        document.getElementById('taxDisplay').textContent = 'Rp ' + tax.toLocaleString('id-ID');
+        document.getElementById('grandTotalDisplay').textContent = 'Rp ' + grandTotal.toLocaleString('id-ID');
+      });
+    });
+  </script>
 </BaseLayout>

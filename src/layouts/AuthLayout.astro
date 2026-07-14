@@ -1,0 +1,81 @@
+---
+// src/layouts/AuthLayout.astro
+
+interface Props {
+  title?: string;
+}
+
+const { title = 'Authentication' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} - SmartStore</title>
+  
+  <link href="/assets/admin/img/favicon.png" rel="icon" />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <!-- Bootstrap CSS -->
+  <link href="/assets/admin/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/assets/admin/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+  
+  <!-- Admin CSS -->
+  <link href="/assets/admin/css/main.css" rel="stylesheet" />
+  
+  <style>
+    .auth-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f2f5;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      padding: 2rem;
+      background: #ffffff;
+      border-radius: 1rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+    }
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .auth-logo img {
+      height: 50px;
+    }
+    .auth-logo h4 {
+      margin-top: 0.5rem;
+      font-weight: 600;
+      color: #4e73df;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <!-- Logo -->
+      <div class="auth-logo">
+        <a href="/">
+          <img src="/assets/admin/img/logo.webp" alt="SmartStore" />
+          <h4>SmartStore</h4>
+        </a>
+      </div>
+      
+      <!-- Content -->
+      <slot />
+    </div>
+  </div>
+
+  <script is:inline src="/assets/admin/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

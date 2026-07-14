@@ -1,0 +1,81 @@
+---
+// src/layouts/AdminLayout.astro
+import Navbar from "../components/admin/Navbar.astro";
+import Sidebar from "../components/admin/Sidebar.astro";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>{title} - SmartStore Admin</title>
+  <link href="/assets/admin/img/favicon.png" rel="icon">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS -->
+  <link href="/assets/admin/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/assets/admin/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="/assets/admin/vendor/remixicon/remixicon.css" rel="stylesheet">
+  
+  <!-- Phosphor Icons -->
+  <link href="/assets/admin/vendor/phosphor-icons/phosphor-icons.css" rel="stylesheet">
+  
+  <link href="/assets/admin/vendor/simple-datatables/style.css" rel="stylesheet">
+
+  <!-- Main CSS -->
+  <link href="/assets/admin/css/main.css" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- ======= Header ======= -->
+  <Navbar />
+
+  <!-- ======= Sidebar ======= -->
+  <Sidebar />
+
+  <!-- ======= Main Content ======= -->
+  <main id="main" class="main">
+    <div class="main-content">
+      <slot />
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-copyright">
+          &copy; 2026 <a href="/admin">SmartStore</a> - All rights reserved
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Back to Top -->
+  <a href="#" class="back-to-top">
+    <i class="bi bi-arrow-up"></i>
+  </a>
+
+  <!-- Vendor JS -->
+  <script is:inline src="/assets/admin/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script is:inline src="/assets/admin/vendor/apexcharts/apexcharts.min.js"></script>
+  <script is:inline src="/assets/admin/vendor/simple-datatables/simple-datatables.js"></script>
+
+  <!-- Main JS -->
+  <script is:inline src="/assets/admin/js/theme.js"></script>
+  <script is:inline src="/assets/admin/js/main.js"></script>
+
+</body>
+
+</html>

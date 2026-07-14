@@ -1,0 +1,181 @@
+---
+// src/components/admin/Navbar.astro
+---
+
+<header class="header">
+  <!-- Header Left -->
+  <div class="header-left">
+    <a href="/admin" class="header-logo">
+      <img src="/assets/admin/img/logo.webp" alt="SmartStore">
+      <span>SmartStore</span>
+    </a>
+    <button class="sidebar-toggle" title="Toggle Sidebar">
+      <i class="bi bi-list"></i>
+    </button>
+  </div>
+
+  <!-- Header Center - Search -->
+  <div class="header-search">
+    <form class="search-form" action="/admin/search" method="GET">
+      <i class="bi bi-search search-icon"></i>
+      <input type="search" name="q" placeholder="Search anything..." autocomplete="off">
+      <kbd class="search-shortcut"><span>&#8984;</span>K</kbd>
+    </form>
+  </div>
+
+  <!-- Header Right -->
+  <div class="header-right">
+    <div class="header-actions-desktop">
+      <!-- Theme Toggle -->
+      <button class="header-action theme-toggle" title="Toggle Theme">
+        <i class="bi bi-moon icon-dark"></i>
+        <i class="bi bi-sun icon-light"></i>
+      </button>
+
+      <!-- Notifications -->
+      <div class="header-action-wrap dropdown notification-dropdown">
+        <button class="header-action dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="bi bi-bell"></i>
+          <span class="header-badge" id="notifBadge">0</span>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end notification-menu">
+          <div class="notification-header">
+            <div>
+              <h6>Notifications</h6>
+              <span class="notification-count" id="notifCount">0 unread</span>
+            </div>
+          </div>
+          <div class="notification-list" id="notifList">
+            <div class="text-center text-muted py-3">No notifications</div>
+          </div>
+        </div>
+      </div>
+
+      <span class="header-divider"></span>
+
+      <!-- User Dropdown -->
+      <div class="header-action-wrap dropdown user-dropdown">
+        <button class="dropdown-toggle user-trigger" data-bs-toggle="dropdown" aria-expanded="false">
+          <img src="/assets/admin/img/profile-img.webp" alt="User" class="user-avatar">
+          <div class="user-brief">
+            <span class="user-name" id="headerUserName">Admin</span>
+            <span class="user-role">Administrator</span>
+          </div>
+          <i class="bi bi-chevron-down user-chevron"></i>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end user-menu">
+          <div class="user-menu-header">
+            <img src="/assets/admin/img/profile-img.webp" alt="User" class="user-menu-avatar">
+            <div class="user-menu-info">
+              <div class="user-menu-name" id="dropdownUserName">Admin</div>
+              <div class="user-menu-email" id="dropdownUserEmail">admin@email.com</div>
+            </div>
+          </div>
+          <div class="user-menu-body">
+            <a class="user-menu-item" href="/admin/profile">
+              <span class="user-menu-icon"><i class="bi bi-person"></i></span>
+              <span>My Profile</span>
+            </a>
+            <a class="user-menu-item" href="/admin/settings">
+              <span class="user-menu-icon"><i class="bi bi-gear"></i></span>
+              <span>Settings</span>
+            </a>
+          </div>
+          <div class="user-menu-footer">
+            <button class="user-menu-logout" id="headerLogoutBtn">
+              <i class="bi bi-box-arrow-right"></i>
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Actions -->
+    <div class="header-actions-mobile">
+      <button class="header-action search-toggle" title="Search">
+        <i class="bi bi-search"></i>
+      </button>
+      <button class="header-action mobile-menu-toggle" title="More">
+        <i class="bi bi-three-dots-vertical"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile Search -->
+<div class="mobile-search">
+  <form class="search-form" action="/admin/search" method="GET">
+    <input type="search" name="q" placeholder="Search..." autocomplete="off">
+    <button type="submit"><i class="bi bi-search"></i></button>
+  </form>
+</div>
+
+<!-- Mobile Header Menu -->
+<div class="mobile-header-menu">
+  <div class="mobile-header-menu-content">
+    <button class="mobile-menu-item theme-toggle">
+      <i class="bi bi-moon icon-dark"></i>
+      <i class="bi bi-sun icon-light"></i>
+      <span class="mobile-menu-label">Theme</span>
+    </button>
+    <a href="/admin/notifications" class="mobile-menu-item">
+      <i class="bi bi-bell"></i>
+      <span class="badge" id="mobileNotifBadge">0</span>
+      <span class="mobile-menu-label">Notifications</span>
+    </a>
+    <a href="/admin/profile" class="mobile-menu-item">
+      <i class="bi bi-person"></i>
+      <span class="mobile-menu-label">Profile</span>
+    </a>
+    <a href="/admin/settings" class="mobile-menu-item">
+      <i class="bi bi-gear"></i>
+      <span class="mobile-menu-label">Settings</span>
+    </a>
+    <button class="mobile-menu-item mobile-menu-item-danger" id="mobileLogoutBtn">
+      <i class="bi bi-box-arrow-right"></i>
+      <span class="mobile-menu-label">Sign Out</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  import { supabase } from "@/lib/supabase";
+
+  // Get user data
+  async function getUserData() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+      
+      const name = profile?.full_name || user.email?.split('@')[0] || 'Admin';
+      
+      const headerNameEl = document.getElementById('headerUserName');
+      const dropdownNameEl = document.getElementById('dropdownUserName');
+      const dropdownEmailEl = document.getElementById('dropdownUserEmail');
+      
+      if (headerNameEl) headerNameEl.textContent = name;
+      if (dropdownNameEl) dropdownNameEl.textContent = name;
+      if (dropdownEmailEl && user.email) dropdownEmailEl.textContent = user.email;
+    }
+  }
+
+  getUserData();
+
+  // Logout handlers
+  function handleLogout() {
+    supabase.auth.signOut().then(() => {
+      window.location.href = '/admin/login';
+    });
+  }
+
+  const headerLogoutBtn = document.getElementById('headerLogoutBtn');
+  const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+  
+  if (headerLogoutBtn) headerLogoutBtn.addEventListener('click', handleLogout);
+  if (mobileLogoutBtn) mobileLogoutBtn.addEventListener('click', handleLogout);
+</script>

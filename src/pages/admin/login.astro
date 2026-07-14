@@ -1,0 +1,123 @@
+---
+// src/pages/admin/login.astro
+import AuthLayout from "../../layouts/AuthLayout.astro";
+---
+
+<AuthLayout title="Admin Login">
+  <h5 class="text-center mb-3">Admin Login</h5>
+  <p class="text-center text-muted small mb-4">Masuk untuk mengakses dashboard</p>
+
+  <form id="loginForm">
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input 
+        type="email" 
+        class="form-control" 
+        id="email" 
+        placeholder="admin@email.com" 
+        required
+      />
+    </div>
+
+    <div class="mb-3">
+      <label for="password" class="form-label">Password</label>
+      <div class="input-group">
+        <input 
+          type="password" 
+          class="form-control" 
+          id="password" 
+          placeholder="Masukkan password" 
+          required
+        />
+        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+          <i class="bi bi-eye"></i>
+        </button>
+      </div>
+    </div>
+
+    <div id="errorMsg" class="alert alert-danger d-none" role="alert"></div>
+
+    <button type="submit" class="btn btn-primary w-100" id="loginBtn">
+      <span id="loginText">Sign In</span>
+      <span id="loginSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+    </button>
+  </form>
+
+  <p class="text-center text-muted small mt-3">
+    &copy; 2026 SmartStore - All rights reserved
+  </p>
+
+  <script>
+    import { supabase } from "@/lib/supabase";
+
+    const form = document.getElementById("loginForm");
+    const errorMsg = document.getElementById("errorMsg");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginText = document.getElementById("loginText");
+    const loginSpinner = document.getElementById("loginSpinner");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const togglePassword = document.getElementById("togglePassword");
+
+    // Toggle password visibility
+    if (togglePassword && passwordInput) {
+      togglePassword.addEventListener("click", () => {
+        const currentType = passwordInput.getAttribute("type");
+        passwordInput.setAttribute("type", currentType === "password" ? "text" : "password");
+      });
+    }
+
+    // Login form submit
+    if (form) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        if (errorMsg) errorMsg.classList.add("d-none");
+        if (loginBtn) loginBtn.setAttribute("disabled", "true");
+        if (loginText) loginText.classList.add("d-none");
+        if (loginSpinner) loginSpinner.classList.remove("d-none");
+
+        const email = emailInput ? (emailInput as HTMLInputElement).value : "";
+        const password = passwordInput ? (passwordInput as HTMLInputElement).value : "";
+
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+
+          if (error) throw error;
+
+          if (!data.user) throw new Error("No user data");
+
+          const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", data.user.id)
+            .single();
+
+          if (profileError) throw profileError;
+
+          if (profile?.role !== "admin") {
+            await supabase.auth.signOut();
+            throw new Error("Akun ini bukan admin.");
+          }
+
+          window.location.href = "/admin";
+
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : "Login gagal. Silakan coba lagi.";
+          
+          if (errorMsg) {
+            errorMsg.textContent = errorMessage;
+            errorMsg.classList.remove("d-none");
+          }
+          
+          if (loginBtn) loginBtn.removeAttribute("disabled");
+          if (loginText) loginText.classList.remove("d-none");
+          if (loginSpinner) loginSpinner.classList.add("d-none");
+        }
+      });
+    }
+  </script>
+</AuthLayout>

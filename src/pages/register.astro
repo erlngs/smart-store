@@ -1,138 +1,197 @@
 ---
+// src/pages/register.astro
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="register - SmartStore" bodyClass="register">
+<BaseLayout title="Register - SmartStore">
+  <!-- Page Title -->
+  <div class="page-title light-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+      <h1 class="mb-2 mb-lg-0">Register</h1>
+      <nav class="breadcrumbs">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li class="current">Register</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
 
-    <!-- Page Title -->
-    <div class="page-title light-background">
-      <div class="container d-lg-flex justify-content-between align-items-center">
-        <h1 class="mb-2 mb-lg-0">Register</h1>
-        <nav class="breadcrumbs">
-          <ol>
-            <li><a href="index.html">Home</a></li>
-            <li class="current">Register</li>
-          </ol>
-        </nav>
-      </div>
-    </div><!-- End Page Title -->
-
-    <!-- Register Section -->
-    <section id="register" class="register section">
-
-      <div class="container" data-aos="fade-up" data-aos-delay="100">
-
-        <div class="row g-0 signup-wrapper" data-aos="zoom-in" data-aos-delay="150">
-          <div class="col-lg-5 d-none d-lg-flex">
-            <div class="promo-panel">
-              <div class="promo-content">
-                <div class="brand-icon">
-                  <i class="bi bi-bag-check"></i>
-                </div>
-                <h2>Begin Your Journey</h2>
-                <p>Unlock exclusive deals and a personalized shopping experience tailored just for you.</p>
-                <ul class="benefit-list">
-                  <li><i class="bi bi-check-circle-fill"></i> <span>Free delivery on first order</span></li>
-                  <li><i class="bi bi-check-circle-fill"></i> <span>Exclusive member-only discounts</span></li>
-                  <li><i class="bi bi-check-circle-fill"></i> <span>Early access to new arrivals</span></li>
-                  <li><i class="bi bi-check-circle-fill"></i> <span>Hassle-free returns &amp; exchanges</span></li>
-                </ul>
+  <!-- Register Section -->
+  <section id="register" class="register section">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+      <div class="row g-0 signup-wrapper" data-aos="zoom-in" data-aos-delay="150">
+        <div class="col-lg-5 d-none d-lg-flex">
+          <div class="promo-panel">
+            <div class="promo-content">
+              <div class="brand-icon">
+                <i class="bi bi-bag-check"></i>
               </div>
-              <div class="panel-decoration">
-                <span class="deco-ring deco-ring-1"></span>
-                <span class="deco-ring deco-ring-2"></span>
-                <span class="deco-dot deco-dot-1"></span>
-                <span class="deco-dot deco-dot-2"></span>
-              </div>
+              <h2>Begin Your Journey</h2>
+              <p>Unlock exclusive deals and a personalized shopping experience tailored just for you.</p>
+              <ul class="benefit-list">
+                <li><i class="bi bi-check-circle-fill"></i> <span>Free delivery on first order</span></li>
+                <li><i class="bi bi-check-circle-fill"></i> <span>Exclusive member-only discounts</span></li>
+                <li><i class="bi bi-check-circle-fill"></i> <span>Early access to new arrivals</span></li>
+                <li><i class="bi bi-check-circle-fill"></i> <span>Hassle-free returns &amp; exchanges</span></li>
+              </ul>
             </div>
-          </div><!-- End Promo Panel -->
-
-          <div class="col-lg-7">
-            <div class="form-panel">
-              <div class="form-top" data-aos="fade-left" data-aos-delay="200">
-                <h3>Set Up Your Account</h3>
-                <p>Already registered? <a href="#" class="signin-link">Log in here</a></p>
-              </div>
-
-              <div class="social-signup" data-aos="fade-left" data-aos-delay="250">
-                <a href="#" class="social-btn social-google">
-                  <i class="bi bi-google"></i>
-                </a>
-                <a href="#" class="social-btn social-facebook">
-                  <i class="bi bi-facebook"></i>
-                </a>
-                <a href="#" class="social-btn social-apple">
-                  <i class="bi bi-apple"></i>
-                </a>
-              </div>
-
-              <div class="separator" data-aos="fade-left" data-aos-delay="300">
-                <span>or register with email</span>
-              </div>
-
-              <form action="register.php" method="post" data-aos="fade-left" data-aos-delay="350">
-                <div class="input-group-custom mb-3">
-                  <span class="input-icon"><i class="bi bi-person"></i></span>
-                  <input type="text" class="form-control" name="fullName" placeholder="Your Full Name" required="" autocomplete="name">
-                </div>
-
-                <div class="input-group-custom mb-3">
-                  <span class="input-icon"><i class="bi bi-envelope"></i></span>
-                  <input type="email" class="form-control" name="email" placeholder="Email Address" required="" autocomplete="email">
-                </div>
-
-                <div class="row g-3 mb-3">
-                  <div class="col-md-6">
-                    <div class="input-group-custom">
-                      <span class="input-icon"><i class="bi bi-lock"></i></span>
-                      <input type="password" class="form-control" name="password" placeholder="Password" required="" minlength="8" autocomplete="new-password">
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <div class="input-group-custom">
-                      <span class="input-icon"><i class="bi bi-shield-lock"></i></span>
-                      <input type="password" class="form-control" name="confirmPassword" placeholder="Repeat Password" required="" minlength="8" autocomplete="new-password">
-                    </div>
-                  </div>
-                </div>
-
-                <div class="input-group-custom mb-4">
-                  <span class="input-icon"><i class="bi bi-globe"></i></span>
-                  <select class="form-select" name="country" required="">
-                    <option value="" selected="" disabled="">Choose your country</option>
-                    <option value="us">United States</option>
-                    <option value="ca">Canada</option>
-                    <option value="uk">United Kingdom</option>
-                    <option value="au">Australia</option>
-                    <option value="de">Germany</option>
-                    <option value="fr">France</option>
-                    <option value="jp">Japan</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div class="form-check mb-3">
-                  <input class="form-check-input" type="checkbox" id="agreeTerms" name="termsCheck" required="">
-                  <label class="form-check-label" for="agreeTerms">
-                    I accept the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
-                  </label>
-                </div>
-
-                <div class="form-check mb-4">
-                  <input class="form-check-input" type="checkbox" id="promoOptIn" name="marketingCheck">
-                  <label class="form-check-label" for="promoOptIn">
-                    Send me promotional emails about offers, new products, and special events
-                  </label>
-                </div>
-
-                <button type="submit" class="btn btn-submit w-100">Get Started Now</button>
-              </form>
-            </div>
-          </div><!-- End Form Panel -->
+          </div>
         </div>
 
+        <div class="col-lg-7">
+          <div class="form-panel">
+            <div class="form-top" data-aos="fade-left" data-aos-delay="200">
+              <h3>Set Up Your Account</h3>
+              <p>Already registered? <a href="/login" class="signin-link">Log in here</a></p>
+            </div>
+
+            <form id="registerForm" data-aos="fade-left" data-aos-delay="350">
+              <div class="input-group-custom mb-3">
+                <span class="input-icon"><i class="bi bi-person"></i></span>
+                <input type="text" class="form-control" id="fullName" placeholder="Your Full Name" required autocomplete="name">
+              </div>
+
+              <div class="input-group-custom mb-3">
+                <span class="input-icon"><i class="bi bi-envelope"></i></span>
+                <input type="email" class="form-control" id="email" placeholder="Email Address" required autocomplete="email">
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <div class="input-group-custom">
+                    <span class="input-icon"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control" id="password" placeholder="Password" required minlength="6" autocomplete="new-password">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="input-group-custom">
+                    <span class="input-icon"><i class="bi bi-shield-lock"></i></span>
+                    <input type="password" class="form-control" id="confirmPassword" placeholder="Repeat Password" required minlength="6" autocomplete="new-password">
+                  </div>
+                </div>
+              </div>
+
+              <div id="errorMsg" class="alert alert-danger d-none"></div>
+
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                <label class="form-check-label" for="agreeTerms">
+                  I accept the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                </label>
+              </div>
+
+              <button type="submit" class="btn btn-submit w-100" id="registerBtn">
+                <span id="registerText">Get Started Now</span>
+                <span id="registerSpinner" class="spinner-border spinner-border-sm d-none"></span>
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
+    </div>
+  </section>
 
-    </section><!-- /Register Section -->
+  <script>
+    import { supabase } from "@/lib/supabase";
 
- </BaseLayout>
+    const form = document.getElementById("registerForm");
+    const errorMsg = document.getElementById("errorMsg");
+    const registerBtn = document.getElementById("registerBtn");
+    const registerText = document.getElementById("registerText");
+    const registerSpinner = document.getElementById("registerSpinner");
+    const fullNameInput = document.getElementById("fullName");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const confirmPasswordInput = document.getElementById("confirmPassword");
+    const agreeTerms = document.getElementById("agreeTerms");
+
+    if (form) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        if (errorMsg) errorMsg.classList.add("d-none");
+        if (registerBtn) registerBtn.setAttribute("disabled", "true");
+        if (registerText) registerText.classList.add("d-none");
+        if (registerSpinner) registerSpinner.classList.remove("d-none");
+
+        const fullName = fullNameInput ? (fullNameInput as HTMLInputElement).value : "";
+        const email = emailInput ? (emailInput as HTMLInputElement).value : "";
+        const password = passwordInput ? (passwordInput as HTMLInputElement).value : "";
+        const confirmPassword = confirmPasswordInput ? (confirmPasswordInput as HTMLInputElement).value : "";
+
+        // Validation
+        if (password !== confirmPassword) {
+          if (errorMsg) {
+            errorMsg.textContent = "Password tidak cocok!";
+            errorMsg.classList.remove("d-none");
+          }
+          if (registerBtn) registerBtn.removeAttribute("disabled");
+          if (registerText) registerText.classList.remove("d-none");
+          if (registerSpinner) registerSpinner.classList.add("d-none");
+          return;
+        }
+
+        if (password.length < 6) {
+          if (errorMsg) {
+            errorMsg.textContent = "Password minimal 6 karakter!";
+            errorMsg.classList.remove("d-none");
+          }
+          if (registerBtn) registerBtn.removeAttribute("disabled");
+          if (registerText) registerText.classList.remove("d-none");
+          if (registerSpinner) registerSpinner.classList.add("d-none");
+          return;
+        }
+
+        if (agreeTerms && !(agreeTerms as HTMLInputElement).checked) {
+          if (errorMsg) {
+            errorMsg.textContent = "Anda harus menyetujui Terms of Service!";
+            errorMsg.classList.remove("d-none");
+          }
+          if (registerBtn) registerBtn.removeAttribute("disabled");
+          if (registerText) registerText.classList.remove("d-none");
+          if (registerSpinner) registerSpinner.classList.add("d-none");
+          return;
+        }
+
+        try {
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                full_name: fullName
+              }
+            }
+          });
+
+          if (error) throw error;
+
+          if (!data.user) throw new Error("Registration failed");
+
+          // Update profile with full name
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ full_name: fullName })
+            .eq('id', data.user.id);
+
+          if (updateError) console.error('Update profile error:', updateError);
+
+          window.location.href = "/";
+
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : "Pendaftaran gagal. Silakan coba lagi.";
+          
+          if (errorMsg) {
+            errorMsg.textContent = errorMessage;
+            errorMsg.classList.remove("d-none");
+          }
+          
+          if (registerBtn) registerBtn.removeAttribute("disabled");
+          if (registerText) registerText.classList.remove("d-none");
+          if (registerSpinner) registerSpinner.classList.add("d-none");
+        }
+      });
+    }
+  </script>
+</BaseLayout>

@@ -7,11 +7,18 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "clean": "rimraf node_modules package-lock.json .astro dist"
   },
   "dependencies": {
+    "@astrojs/node": "^11.0.2",
+    "@supabase/supabase-js": "^2.110.5",
     "astro": "^7.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1"
   }
 }

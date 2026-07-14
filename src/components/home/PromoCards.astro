@@ -1,69 +1,95 @@
+---
+// src/components/home/PromoCards.astro
+import { supabase } from "../../lib/supabase";
+
+// Ambil 4 produk untuk promo
+const { data: promoProducts } = await supabase
+  .from('products')
+  .select('*')
+  .eq('is_active', true)
+  .limit(4);
+---
+
 <section id="promo-cards" class="promo-cards section">
+  <div class="container" data-aos="fade-up" data-aos-delay="100">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="featured-banner" data-aos="zoom-in" data-aos-delay="150">
+          <img src="/assets/store/img/product/product-showcase-6.webp" alt="Autumn Essentials" class="img-fluid">
+          <div class="banner-content">
+            <span class="badge-label">Fresh Arrivals</span>
+            <h2>Autumn Essentials</h2>
+            <p>Temukan koleksi terbaru kami dengan harga terbaik</p>
+            <a href="/category" class="btn-explore">Browse Collection <i class="bi bi-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <div class="container" data-aos="fade-up" data-aos-delay="100">
-
-        <div class="row mb-4">
-          <div class="col-12">
-            <div class="featured-banner" data-aos="zoom-in" data-aos-delay="150">
-              <img src="assets/store/img/product/product-showcase-6.webp" alt="Autumn Essentials" class="img-fluid">
-              <div class="banner-content">
-                <span class="badge-label">Fresh Arrivals</span>
-                <h2>Autumn Essentials</h2>
-                <p>Curabitur pretium tincidunt lacus nulla gravida orci a odio sed dignissim sapien imperdiet nec.</p>
-                <a href="#" class="btn-explore">Browse Collection <i class="bi bi-arrow-right"></i></a>
+    <div class="row g-4">
+      {promoProducts && promoProducts.length > 0 ? (
+        promoProducts.map((product, index) => (
+          <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay={200 + (index * 100)}>
+            <div class="collection-tile">
+              <img 
+                src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} 
+                alt={product.name} 
+                loading="lazy" 
+                class="img-fluid"
+              />
+              <div class="tile-content">
+                <h4>{product.name}</h4>
+                <span class="item-count">{product.stock || 0} items</span>
+                <a href={`/product-details?slug=${product.slug}`} class="tile-link">Browse <i class="bi bi-chevron-right"></i></a>
               </div>
             </div>
           </div>
-        </div><!-- End Featured Banner -->
-
-        <div class="row g-4">
-
+        ))
+      ) : (
+        // Fallback jika belum ada produk
+        <>
           <div class="col-lg-3 col-md-6">
-            <div class="collection-tile" data-aos="fade-up" data-aos-delay="200">
-              <img src="assets/store/img/product/product-m-14.webp" alt="Gentlemen's Attire" loading="lazy" class="img-fluid">
+            <div class="collection-tile">
+              <img src="/assets/store/img/product/product-m-14.webp" alt="Gentlemen's Attire" loading="lazy" class="img-fluid">
               <div class="tile-content">
                 <h4>Gentlemen's Attire</h4>
                 <span class="item-count">318 items</span>
                 <a href="#" class="tile-link">Browse <i class="bi bi-chevron-right"></i></a>
               </div>
             </div>
-          </div><!-- End Collection Tile -->
-
+          </div>
           <div class="col-lg-3 col-md-6">
-            <div class="collection-tile" data-aos="fade-up" data-aos-delay="300">
-              <img src="assets/store/img/product/product-f-18.webp" alt="Casual Collection" loading="lazy" class="img-fluid">
+            <div class="collection-tile">
+              <img src="/assets/store/img/product/product-f-18.webp" alt="Casual Collection" loading="lazy" class="img-fluid">
               <div class="tile-content">
                 <h4>Casual Collection</h4>
                 <span class="item-count">163 items</span>
                 <a href="#" class="tile-link">Browse <i class="bi bi-chevron-right"></i></a>
               </div>
             </div>
-          </div><!-- End Collection Tile -->
-
+          </div>
           <div class="col-lg-3 col-md-6">
-            <div class="collection-tile" data-aos="fade-up" data-aos-delay="400">
-              <img src="assets/store/img/product/product-f-6.webp" alt="Skincare &amp; Glow" loading="lazy" class="img-fluid">
+            <div class="collection-tile">
+              <img src="/assets/store/img/product/product-f-6.webp" alt="Skincare & Glow" loading="lazy" class="img-fluid">
               <div class="tile-content">
-                <h4>Skincare &amp; Glow</h4>
+                <h4>Skincare & Glow</h4>
                 <span class="item-count">94 items</span>
                 <a href="#" class="tile-link">Browse <i class="bi bi-chevron-right"></i></a>
               </div>
             </div>
-          </div><!-- End Collection Tile -->
-
+          </div>
           <div class="col-lg-3 col-md-6">
-            <div class="collection-tile" data-aos="fade-up" data-aos-delay="500">
-              <img src="assets/store/img/product/product-m-17.webp" alt="Bags &amp; Extras" loading="lazy" class="img-fluid">
+            <div class="collection-tile">
+              <img src="/assets/store/img/product/product-m-17.webp" alt="Bags & Extras" loading="lazy" class="img-fluid">
               <div class="tile-content">
-                <h4>Bags &amp; Extras</h4>
+                <h4>Bags & Extras</h4>
                 <span class="item-count">271 items</span>
                 <a href="#" class="tile-link">Browse <i class="bi bi-chevron-right"></i></a>
               </div>
             </div>
-          </div><!-- End Collection Tile -->
-
-        </div>
-
-      </div>
-
-    </section><!-- /Promo Cards Section -->
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+</section>
