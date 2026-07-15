@@ -1,10 +1,8 @@
 ---
 const currentPath = Astro.url.pathname;
-import { supabase } from "@/lib/supabase";
 
-// Cek session di server
-const { data: { session } } = await supabase.auth.getSession();
-const user = session?.user || null;
+// Ambil dari middleware, bukan panggil supabase langsung
+const { user, supabase } = Astro.locals;
 
 let profile = null;
 if (user) {
@@ -193,7 +191,7 @@ if (user) {
   </header>
 
 <script>
-  import { supabase } from "@/lib/supabase";
+  import { supabase } from "@/lib/supabase/client";
 
   // Load products untuk dropdown
   async function loadProductDropdown() {
@@ -219,16 +217,16 @@ if (user) {
 
   // Load cart count
   async function loadCartCount() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
       const { count } = await supabase
         .from('cart')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', session.user.id);
+        .eq('user_id', user.id);
       
       const cartCount = document.getElementById('cartCount');
-      if (cartCount && count > 0) {
-        cartCount.textContent = count;
+      if (cartCount && count && count > 0) {
+        cartCount.textContent = String(count);
         cartCount.style.display = 'inline';
       }
     }

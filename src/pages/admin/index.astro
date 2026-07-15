@@ -1,8 +1,20 @@
 ---
 // src/pages/admin/index.astro
-import AdminLayout from "../../layouts/AdminLayout.astro";
-import { supabase } from "../../lib/supabase";
+export const prerender = false;
 
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { isUserAdmin } from "../../lib/supabase/server";
+
+const { supabase, user } = Astro.locals;
+
+// Proteksi: harus login & admin
+if (!user) {
+  return Astro.redirect('/login');
+}
+const isAdmin = await isUserAdmin(supabase, user.id);
+if (!isAdmin) {
+  return Astro.redirect('/');
+}
 // Get stats
 const { count: totalProducts } = await supabase
   .from('products')

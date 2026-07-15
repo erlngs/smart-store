@@ -1,6 +1,6 @@
 ---
 // src/components/home/PromoCards.astro
-import { supabase } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase/client";
 
 // Ambil 4 produk untuk promo
 const { data: promoProducts } = await supabase

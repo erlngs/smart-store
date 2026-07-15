@@ -1,7 +1,12 @@
 ---
 // @ts-nocheck
+export const prerender = false;
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { supabase } from "../lib/supabase";
+
+// GANTI baris ini:
+// import { supabase } from "../lib/supabase";
+// JADI:
+const { supabase } = Astro.locals;
 
 // Ambil slug dari URL
 const slug = Astro.url.searchParams.get('slug');
@@ -397,37 +402,38 @@ function renderStars(rating) {
   </section>
 
   <script>
-    import { supabase } from "@/lib/supabase";
+    import { supabase } from "@/lib/supabase/client";
 
     // Quantity selector
-    const qtyInput = document.getElementById('qtyInput');
+    const qtyInput = document.getElementById('qtyInput') as HTMLInputElement | null;
     const decreaseBtn = document.querySelector('.decrease');
     const increaseBtn = document.querySelector('.increase');
 
     if (decreaseBtn && qtyInput) {
-      decreaseBtn.addEventListener('click', function() {
+      decreaseBtn.addEventListener('click', () => {
         let val = parseInt(qtyInput.value) || 1;
-        if (val > 1) qtyInput.value = val - 1;
+        if (val > 1) qtyInput.value = String(val - 1);
       });
     }
 
     if (increaseBtn && qtyInput) {
-      increaseBtn.addEventListener('click', function() {
+      increaseBtn.addEventListener('click', () => {
         let val = parseInt(qtyInput.value) || 1;
-        const max = parseInt(qtyInput.getAttribute('max')) || 99;
-        if (val < max) qtyInput.value = val + 1;
+        const max = parseInt(qtyInput.getAttribute('max') || '99') || 99;
+        if (val < max) qtyInput.value = String(val + 1);
       });
     }
 
     // Add to Cart
     const addToCartBtn = document.getElementById('addToCartBtn');
     if (addToCartBtn) {
-      addToCartBtn.addEventListener('click', async function() {
-        const productId = this.dataset.productId;
-        const quantity = parseInt(qtyInput?.value) || 1;
+      addToCartBtn.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const productId = target.dataset.productId;
+        const quantity = parseInt(qtyInput?.value || '1') || 1;
 
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (!session) {
           window.location.href = '/login';
           return;
@@ -437,7 +443,7 @@ function renderStars(rating) {
           .from('cart')
           .insert({
             user_id: session.user.id,
-            product_id: productId,
+            product_id: productId as string,
             quantity: quantity
           });
 

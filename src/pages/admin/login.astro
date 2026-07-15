@@ -48,7 +48,7 @@ import AuthLayout from "../../layouts/AuthLayout.astro";
   </p>
 
   <script>
-    import { supabase } from "@/lib/supabase";
+    import { supabase } from "@/lib/supabase/client";
 
     const form = document.getElementById("loginForm");
     const errorMsg = document.getElementById("errorMsg");

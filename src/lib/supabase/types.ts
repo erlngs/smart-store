@@ -1,17 +1,3 @@
-// src/lib/supabase.ts
-import { createClient } from '@supabase/supabase-js';
-
-// Gunakan import.meta.env untuk Astro
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Database types
 export type Database = {
   public: {
     Tables: {
@@ -126,27 +112,3 @@ export type Database = {
     };
   };
 };
-
-// Helper: Cek admin
-export async function isUserAdmin(userId: string) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
-    .single();
-  
-  if (error || !data) return false;
-  return data.role === 'admin';
-}
-
-// Helper: Get user profile
-export async function getUserProfile(userId: string) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
-  
-  if (error) throw error;
-  return data;
-}

@@ -2,10 +2,8 @@
 // @ts-nocheck
 // src/pages/cart.astro
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { supabase } from "../lib/supabase";
 
-// Cek session
-const { data: { session } } = await supabase.auth.getSession();
+const { user, supabase } = Astro.locals;
 
 let cartItems = [];
 let subtotal = 0;
@@ -14,7 +12,7 @@ let shippingCost = 0;
 let tax = 0;
 let grandTotal = 0;
 
-if (session) {
+if (user) {
   // Ambil data cart dengan join ke products
   const { data, error } = await supabase
     .from('cart')
@@ -32,7 +30,7 @@ if (session) {
         stock
       )
     `)
-    .eq('user_id', session.user.id);
+    .eq('user_id', user.id);
 
   if (!error && data) {
     cartItems = data;
@@ -71,7 +69,7 @@ if (session) {
 
     <div class="container" data-aos="fade-up" data-aos-delay="100">
 
-      {!session ? (
+      {!user ? (
         <div class="text-center py-5">
           <div class="empty-cart-icon mb-4">
             <i class="bi bi-cart3" style="font-size: 80px; color: #dee2e6;"></i>
@@ -239,54 +237,55 @@ if (session) {
   </section>
 
   <script>
-    import { supabase } from "@/lib/supabase";
+    import { supabase } from "@/lib/supabase/client";
 
     // Update quantity
-    document.querySelectorAll('.quantity-btn').forEach((btn) => {
-      btn.addEventListener('click', async function() {
-        const cartId = this.dataset.cartId;
-        const input = document.querySelector(`.quantity-input[data-cart-id="${cartId}"]`);
+    document.querySelectorAll<HTMLButtonElement>('.quantity-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLButtonElement;
+        const cartId = target.dataset.cartId;
+        const input = document.querySelector<HTMLInputElement>(`.quantity-input[data-cart-id="${cartId}"]`);
         if (!input) return;
-        
+
         let val = parseInt(input.value) || 1;
-        const max = parseInt(input.getAttribute('max')) || 99;
-        
-        if (this.classList.contains('decrease')) {
+        const max = parseInt(input.getAttribute('max') || '99') || 99;
+
+        if (target.classList.contains('decrease')) {
           if (val > 1) val--;
-        } else if (this.classList.contains('increase')) {
+        } else if (target.classList.contains('increase')) {
           if (val < max) val++;
         }
-        
-        input.value = val;
-        
-        // Update di database
+
+        input.value = String(val);
+
         const { error } = await supabase
           .from('cart')
           .update({ quantity: val })
-          .eq('id', cartId);
-        
+          .eq('id', cartId as string);
+
         if (!error) {
-          // Refresh halaman
           window.location.reload();
         }
       });
     });
 
     // Manual input quantity
-    document.querySelectorAll('.quantity-input').forEach((input) => {
-      input.addEventListener('change', async function() {
-        const cartId = this.dataset.cartId;
-        const val = parseInt(this.value) || 1;
-        const max = parseInt(this.getAttribute('max')) || 99;
-        
-        if (val < 1) this.value = 1;
-        if (val > max) this.value = max;
-        
+    document.querySelectorAll<HTMLInputElement>('.quantity-input').forEach((input) => {
+      input.addEventListener('change', async (e) => {
+        const target = e.currentTarget as HTMLInputElement;
+        const cartId = target.dataset.cartId;
+        let val = parseInt(target.value) || 1;
+        const max = parseInt(target.getAttribute('max') || '99') || 99;
+
+        if (val < 1) val = 1;
+        if (val > max) val = max;
+        target.value = String(val);
+
         const { error } = await supabase
           .from('cart')
-          .update({ quantity: parseInt(this.value) })
-          .eq('id', cartId);
-        
+          .update({ quantity: val })
+          .eq('id', cartId as string);
+
         if (!error) {
           window.location.reload();
         }
@@ -294,16 +293,17 @@ if (session) {
     });
 
     // Remove item
-    document.querySelectorAll('.remove-item').forEach((btn) => {
-      btn.addEventListener('click', async function() {
-        const cartId = this.dataset.cartId;
-        
+    document.querySelectorAll<HTMLButtonElement>('.remove-item').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLButtonElement;
+        const cartId = target.dataset.cartId;
+
         if (confirm('Hapus produk dari keranjang?')) {
           const { error } = await supabase
             .from('cart')
             .delete()
-            .eq('id', cartId);
-          
+            .eq('id', cartId as string);
+
           if (!error) {
             window.location.reload();
           }
@@ -312,15 +312,15 @@ if (session) {
     });
 
     // Empty cart
-    document.getElementById('emptyCartBtn')?.addEventListener('click', async function() {
+    document.getElementById('emptyCartBtn')?.addEventListener('click', async () => {
       if (confirm('Kosongkan semua keranjang?')) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
           const { error } = await supabase
             .from('cart')
             .delete()
-            .eq('user_id', session.user.id);
-          
+            .eq('user_id', user.id);
+
           if (!error) {
             window.location.reload();
           }
@@ -329,15 +329,22 @@ if (session) {
     });
 
     // Update shipping cost
-    document.querySelectorAll('input[name="delivery"]').forEach((radio) => {
-      radio.addEventListener('change', function() {
-        const shippingCost = parseInt(this.value) || 0;
-        const subtotal = parseInt(document.getElementById('subtotalDisplay').textContent.replace(/[^0-9]/g, '')) || 0;
+    document.querySelectorAll<HTMLInputElement>('input[name="delivery"]').forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        const target = e.currentTarget as HTMLInputElement;
+        const shippingCost = parseInt(target.value) || 0;
+
+        const subtotalEl = document.getElementById('subtotalDisplay');
+        const taxEl = document.getElementById('taxDisplay');
+        const grandTotalEl = document.getElementById('grandTotalDisplay');
+        if (!subtotalEl || !taxEl || !grandTotalEl) return;
+
+        const subtotal = parseInt((subtotalEl.textContent || '').replace(/[^0-9]/g, '')) || 0;
         const tax = Math.round(subtotal * 0.11);
         const grandTotal = subtotal + shippingCost + tax;
-        
-        document.getElementById('taxDisplay').textContent = 'Rp ' + tax.toLocaleString('id-ID');
-        document.getElementById('grandTotalDisplay').textContent = 'Rp ' + grandTotal.toLocaleString('id-ID');
+
+        taxEl.textContent = 'Rp ' + tax.toLocaleString('id-ID');
+        grandTotalEl.textContent = 'Rp ' + grandTotal.toLocaleString('id-ID');
       });
     });
   </script>

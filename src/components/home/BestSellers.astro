@@ -1,6 +1,6 @@
 ---
 // src/components/home/BestSellers.astro
-import { supabase } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase/client";
 
 // Ambil 4 produk terbaru
 const { data: products, error } = await supabase

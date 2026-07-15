@@ -140,7 +140,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   </div>
 
   <script>
-    import { supabase } from "@/lib/supabase";
+    import { supabase } from "@/lib/supabase/client";
 
     const loadingEl = document.getElementById('account-loading') as HTMLElement | null;
     const contentEl = document.getElementById('account-content') as HTMLElement | null;

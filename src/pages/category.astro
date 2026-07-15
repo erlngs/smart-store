@@ -1,13 +1,14 @@
 ---
-// @ts-nocheck
 // src/pages/category.astro
+export const prerender = false;
+
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { supabase } from "../lib/supabase";
+
+const { supabase } = Astro.locals;
 
 // Ambil parameter filter dari URL
 const categoryFilter = Astro.url.searchParams.get('cat');
 const searchQuery = Astro.url.searchParams.get('search');
-
 // Ambil semua produk aktif
 let query = supabase
   .from('products')
@@ -253,13 +254,16 @@ function renderStars(rating) {
     </div>
   </div>
 
-  <script>
+ <script>
+    import { supabase } from "@/lib/supabase/client";
+
     // Search functionality
     const searchForm = document.getElementById('searchForm');
     if (searchForm) {
-      searchForm.addEventListener('submit', function(e) {
+      searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const query = document.getElementById('productSearch').value;
+        const searchInput = document.getElementById('productSearch') as HTMLInputElement | null;
+        const query = searchInput?.value || '';
         const currentUrl = new URL(window.location.href);
         if (query) {
           currentUrl.searchParams.set('search', query);
@@ -271,32 +275,34 @@ function renderStars(rating) {
     }
 
     // Sort functionality
-    const sortSelect = document.getElementById('sortBy');
+    const sortSelect = document.getElementById('sortBy') as HTMLSelectElement | null;
     if (sortSelect) {
-      sortSelect.addEventListener('change', function() {
+      sortSelect.addEventListener('change', (e) => {
+        const target = e.currentTarget as HTMLSelectElement;
         const grid = document.getElementById('productGrid');
         if (!grid) return;
         const items = Array.from(grid.querySelectorAll('.col-6'));
-        const sortBy = this.value;
+        const sortBy = target.value;
 
-        items.sort(function(a, b) {
+        items.sort((a, b) => {
           const priceA = parseFloat(a.querySelector('.item-cost')?.textContent?.replace(/[^0-9]/g, '') || '0');
           const priceB = parseFloat(b.querySelector('.item-cost')?.textContent?.replace(/[^0-9]/g, '') || '0');
-          
+
           if (sortBy === 'price_low') return priceA - priceB;
           if (sortBy === 'price_high') return priceB - priceA;
           return 0;
         });
 
-        items.forEach(function(item) { grid.appendChild(item); });
+        items.forEach((item) => { grid.appendChild(item); });
       });
     }
 
     // Add to Cart
-    document.querySelectorAll('.add-to-cart').forEach(function(btn) {
-      btn.addEventListener('click', async function(e) {
+    document.querySelectorAll<HTMLButtonElement>('.add-to-cart').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
         e.preventDefault();
-        const productId = this.dataset.productId;
+        const target = e.currentTarget as HTMLButtonElement;
+        const productId = target.dataset.productId;
 
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
@@ -308,7 +314,7 @@ function renderStars(rating) {
           .from('cart')
           .insert({
             user_id: session.user.id,
-            product_id: productId,
+            product_id: productId as string,
             quantity: 1
           });
 

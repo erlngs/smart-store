@@ -1,6 +1,6 @@
 ---
 // src/components/home/ProductTabs.astro
-import { supabase } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase/client";
 
 // Ambil produk untuk tiap tab
 const { data: popularProducts } = await supabase
