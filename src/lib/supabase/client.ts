@@ -7,4 +7,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+function createSupabaseBrowserClient(cookieName: string) {
+  return createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: { name: cookieName },
+    isSingleton: false, // penting: cegah instance ke-cache/ke-share
+  });
+}
+
+// Session pelanggan
+export const supabase = createSupabaseBrowserClient('sb-customer-auth-token');
+
+// Session admin
+export const supabaseAdmin = createSupabaseBrowserClient('sb-admin-auth-token');

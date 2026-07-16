@@ -9,7 +9,7 @@ const { supabase, user } = Astro.locals;
 
 // Proteksi: harus login & admin
 if (!user) {
-  return Astro.redirect('/login');
+  return Astro.redirect('/admin/login');
 }
 const isAdmin = await isUserAdmin(supabase, user.id);
 if (!isAdmin) {

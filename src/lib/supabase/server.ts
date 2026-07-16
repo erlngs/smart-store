@@ -4,8 +4,13 @@ import type { AstroCookies } from 'astro';
 const supabaseUrl: string = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseAnonKey: string = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
-export function createSupabaseServerClient(request: Request, cookies: AstroCookies) {
+export function createSupabaseServerClient(
+  request: Request,
+  cookies: AstroCookies,
+  cookieName: string = 'sb-customer-auth-token'
+) {
   return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: { name: cookieName },
     cookies: {
       getAll() {
         return parseCookieHeader(request.headers.get('Cookie') ?? '');
@@ -19,7 +24,6 @@ export function createSupabaseServerClient(request: Request, cookies: AstroCooki
   });
 }
 
-// Helper: Cek admin
 export async function isUserAdmin(
   supabase: ReturnType<typeof createSupabaseServerClient>,
   userId: string
@@ -34,7 +38,6 @@ export async function isUserAdmin(
   return (data as any).role === 'admin';
 }
 
-// Helper: Get user profile
 export async function getUserProfile(
   supabase: ReturnType<typeof createSupabaseServerClient>,
   userId: string

@@ -75,7 +75,7 @@ const { title } = Astro.props;
 
   <!-- ===== PROTEKSI ADMIN (PAKAI SCRIPT) ===== -->
   <script>
-    import { supabase } from "@/lib/supabase/client";
+    import { supabaseAdmin as supabase } from "@/lib/supabase/client";
 
     async function checkAdminAuth() {
       try {

@@ -38,7 +38,7 @@ const uniqueCategories = [...new Set(allProducts?.map(p => p.category).filter(Bo
 const totalProducts = products?.length || 0;
 
 // Fungsi render bintang
-function renderStars(rating) {
+function renderStars(rating: number) {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
   const stars = [];
