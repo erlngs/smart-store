@@ -1,5 +1,9 @@
 ---
+// @ts-nocheck
 // src/components/admin/Sidebar.astro
+
+// Ambil path saat ini
+const currentPath = Astro.url.pathname;
 ---
 
 <aside class="sidebar">
@@ -22,23 +26,23 @@
 
       <!-- Dashboard -->
       <li class="nav-item">
-        <a class="nav-link active" href="/admin">
+        <a class="nav-link" class:list={{ active: currentPath === "/admin" || currentPath === "/admin/" }} href="/admin">
           <span class="nav-icon"><i class="ph-light ph-squares-four"></i></span>
           <span class="nav-text">Dashboard</span>
         </a>
       </li>
 
       <!-- Products -->
-      <li class="nav-item">
-        <a class="nav-link" href="/admin/products">
-          <span class="nav-icon"><i class="ph-light ph-box"></i></span>
-          <span class="nav-text">Products</span>
-        </a>
-      </li>
+<li class="nav-item">
+  <a class="nav-link" class:list={{ active: currentPath === "/admin/products" || currentPath.startsWith("/admin/products") }} href="/admin/products">
+    <span class="nav-icon"><i class="bi bi-box-seam"></i></span>
+    <span class="nav-text">Products</span>
+  </a>
+</li>
 
       <!-- Orders -->
       <li class="nav-item">
-        <a class="nav-link" href="/admin/orders">
+        <a class="nav-link" class:list={{ active: currentPath === "/admin/orders" || currentPath.startsWith("/admin/orders") }} href="/admin/orders">
           <span class="nav-icon"><i class="ph-light ph-shopping-cart"></i></span>
           <span class="nav-text">Orders</span>
           <span class="badge bg-danger ms-auto" id="orderBadge">0</span>
@@ -47,7 +51,7 @@
 
       <!-- Users -->
       <li class="nav-item">
-        <a class="nav-link" href="/admin/users">
+        <a class="nav-link" class:list={{ active: currentPath === "/admin/users" || currentPath.startsWith("/admin/users") }} href="/admin/users">
           <span class="nav-icon"><i class="ph-light ph-users-three"></i></span>
           <span class="nav-text">Users</span>
         </a>
@@ -57,7 +61,7 @@
 
       <!-- Settings -->
       <li class="nav-item">
-        <a class="nav-link" href="/admin/settings">
+        <a class="nav-link" class:list={{ active: currentPath === "/admin/settings" || currentPath.startsWith("/admin/settings") }} href="/admin/settings">
           <span class="nav-icon"><i class="ph-light ph-gear"></i></span>
           <span class="nav-text">Settings</span>
         </a>
@@ -89,7 +93,7 @@
 <div class="sidebar-overlay"></div>
 
 <script>
-  import { supabaseAdmin as supabase } from "@/lib/supabase/client";
+  import { supabase } from "@/lib/supabase/client";
 
   // Logout
   const logoutBtn = document.getElementById('logoutBtn');
@@ -116,7 +120,7 @@
       
       const userNameEl = document.getElementById('userName');
       if (userNameEl) {
-        userNameEl.textContent = profile?.full_name || user.email?.split('@')[0] || 'Admin';
+        userNameEl.textContent = (profile as any)?.full_name || user.email?.split('@')[0] || 'Admin';
       }
     }
   }
@@ -133,7 +137,7 @@
     const badge = document.getElementById('orderBadge');
     if (badge) {
       if (count && count > 0) {
-        badge.textContent = String(count); // Convert to string
+        badge.textContent = String(count);
         badge.style.display = 'inline';
       } else {
         badge.style.display = 'none';

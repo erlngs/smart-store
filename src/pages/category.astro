@@ -298,34 +298,57 @@ function renderStars(rating: number) {
     }
 
     // Add to Cart
-    document.querySelectorAll<HTMLButtonElement>('.add-to-cart').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const target = e.currentTarget as HTMLButtonElement;
-        const productId = target.dataset.productId;
+document.querySelectorAll('.add-to-cart').forEach((btn) => {
+  btn.addEventListener('click', async function(e) {
+    e.preventDefault();
+    const productId = this.dataset.productId;
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          window.location.href = '/login';
-          return;
-        }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.href = '/login';
+      return;
+    }
 
-        const { error } = await supabase
-          .from('cart')
-          .insert({
-            user_id: session.user.id,
-            product_id: productId as string,
-            quantity: 1
-          });
+    // Cek apakah produk sudah ada di cart
+    const { data: existing } = await supabase
+      .from('cart')
+      .select('id, quantity')
+      .eq('user_id', session.user.id)
+      .eq('product_id', productId)
+      .single();
 
-        if (error && error.code === '23505') {
-          alert('Produk sudah ada di keranjang!');
-        } else if (error) {
-          alert('Gagal menambahkan ke keranjang');
-        } else {
-          alert('Produk ditambahkan ke keranjang!');
-        }
-      });
-    });
+    if (existing) {
+      const newQuantity = existing.quantity + 1;
+      const { error } = await supabase
+        .from('cart')
+        .update({ quantity: newQuantity })
+        .eq('id', existing.id);
+
+      if (error) {
+        alert('Gagal menambahkan ke keranjang');
+      } else {
+        alert('Produk ditambahkan ke keranjang!');
+
+        document.dispatchEvent(new Event('cartUpdated'));
+        window.location.reload();
+      }
+    } else {
+      const { error } = await supabase
+        .from('cart')
+        .insert({
+          user_id: session.user.id,
+          product_id: productId,
+          quantity: 1
+        });
+
+      if (error) {
+        alert('Gagal menambahkan ke keranjang');
+      } else {
+        alert('Produk ditambahkan ke keranjang!');
+        window.location.reload();
+      }
+    }
+  });
+});
   </script>
 </BaseLayout>

@@ -1,96 +1,173 @@
 ---
+// @ts-nocheck
+// src/pages/checkout.astro
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="checkout - SmartStore" bodyClass="checkout">
+<BaseLayout title="Checkout - SmartStore" bodyClass="checkout">
 
-    <!-- Checkout Section -->
-    <section id="checkout" class="checkout section">
+  <!-- Checkout Section -->
+  <section id="checkout" class="checkout section">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
 
-      <div class="container" data-aos="fade-up" data-aos-delay="100">
-
-        <!-- Progress Stepper -->
-        <div class="progress-stepper d-flex justify-content-center mb-5" data-aos="fade-down" data-aos-delay="100">
-          <div class="step-item active">
-            <div class="step-icon"><i class="bi bi-person"></i></div>
-            <span class="step-label">Details</span>
-          </div>
-          <div class="step-line"></div>
-          <div class="step-item">
-            <div class="step-icon"><i class="bi bi-truck"></i></div>
-            <span class="step-label">Shipping</span>
-          </div>
-          <div class="step-line"></div>
-          <div class="step-item">
-            <div class="step-icon"><i class="bi bi-credit-card"></i></div>
-            <span class="step-label">Payment</span>
-          </div>
-          <div class="step-line"></div>
-          <div class="step-item">
-            <div class="step-icon"><i class="bi bi-check-circle"></i></div>
-            <span class="step-label">Confirm</span>
-          </div>
+      <!-- Progress Stepper -->
+      <div class="progress-stepper d-flex justify-content-center mb-5" data-aos="fade-down" data-aos-delay="100">
+        <div class="step-item active">
+          <div class="step-icon"><i class="bi bi-person"></i></div>
+          <span class="step-label">Details</span>
         </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-icon"><i class="bi bi-truck"></i></div>
+          <span class="step-label">Shipping</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-icon"><i class="bi bi-credit-card"></i></div>
+          <span class="step-label">Payment</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-icon"><i class="bi bi-check-circle"></i></div>
+          <span class="step-label">Confirm</span>
+        </div>
+      </div>
 
+      <!-- Loading State -->
+      <div id="checkout-loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">Loading checkout...</p>
+      </div>
+
+      <!-- Checkout Content -->
+      <div id="checkout-content" style="display: none;"></div>
+
+    </div>
+  </section>
+
+  <script>
+    //@ts-nocheck
+    import { supabase } from "@/lib/supabase/client";
+
+    async function loadCheckout() {
+      const loadingEl = document.getElementById('checkout-loading');
+      const contentEl = document.getElementById('checkout-content');
+
+      // Cek session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        window.location.href = '/login';
+        return;
+      }
+
+      // Ambil cart items
+      const { data: cartItems, error } = await supabase
+        .from('cart')
+        .select(`
+          id,
+          quantity,
+          product_id,
+          products (
+            id,
+            name,
+            slug,
+            price,
+            discount,
+            image_url,
+            stock
+          )
+        `)
+        .eq('user_id', session.user.id);
+
+      if (error || !cartItems || cartItems.length === 0) {
+        contentEl.innerHTML = `
+          <div class="row justify-content-center">
+            <div class="col-lg-6">
+              <div class="card text-center p-5">
+                <i class="bi bi-cart-x" style="font-size: 64px; color: #6c757d;"></i>
+                <h4 class="mt-3">Your Cart is Empty</h4>
+                <p class="text-muted">Add some products to your cart before checking out.</p>
+                <a href="/category" class="btn btn-primary">Start Shopping</a>
+              </div>
+            </div>
+          </div>
+        `;
+        loadingEl.style.display = 'none';
+        contentEl.style.display = 'block';
+        return;
+      }
+
+      // Hitung total
+      let subtotal = 0;
+      let totalItems = 0;
+      const shippingCost = 20000;
+
+      cartItems.forEach((item) => {
+        const price = item.products.price;
+        const discount = item.products.discount || 0;
+        const discountedPrice = price * (1 - discount / 100);
+        subtotal += discountedPrice * item.quantity;
+        totalItems += item.quantity;
+      });
+
+      const grandTotal = subtotal + shippingCost;
+
+      // Ambil profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, phone, address')
+        .eq('id', session.user.id)
+        .single();
+
+      // Render HTML
+      const summaryItems = cartItems.map((item) => {
+        const price = item.products.price;
+        const discount = item.products.discount || 0;
+        const discountedPrice = price * (1 - discount / 100);
+        const itemTotal = discountedPrice * item.quantity;
+        
+        return `
+          <div class="summary-item">
+            <div class="item-thumb">
+              <img src="${item.products.image_url || '/assets/store/img/product/product-placeholder.webp'}" alt="${item.products.name}" class="img-fluid">
+              <span class="item-qty">${item.quantity}</span>
+            </div>
+            <div class="item-info">
+              <h5>${item.products.name}</h5>
+              <span class="item-meta">Rp ${discountedPrice.toLocaleString('id-ID')} x ${item.quantity}</span>
+            </div>
+            <div class="item-cost">Rp ${itemTotal.toLocaleString('id-ID')}</div>
+          </div>
+        `;
+      }).join('');
+
+      contentEl.innerHTML = `
         <div class="row">
-
-          <!-- Order Summary - Left Side -->
+          <!-- Order Summary -->
           <div class="col-lg-4 order-lg-1 order-2">
             <div class="summary-panel" data-aos="fade-right" data-aos-delay="200">
               <div class="summary-top">
                 <h3><i class="bi bi-bag-check me-2"></i>Your Cart</h3>
-                <span class="badge-count">2</span>
+                <span class="badge-count">${totalItems}</span>
               </div>
 
-              <div class="summary-items">
-                <div class="summary-item">
-                  <div class="item-thumb">
-                    <img src="assets/store/img/product/product-5.webp" alt="Product" class="img-fluid">
-                    <span class="item-qty">1</span>
-                  </div>
-                  <div class="item-info">
-                    <h5>Adipiscing Elite</h5>
-                    <span class="item-meta">Shade: Onyx | Fit: M</span>
-                  </div>
-                  <div class="item-cost">$89.99</div>
-                </div><!-- End Summary Item -->
-
-                <div class="summary-item">
-                  <div class="item-thumb">
-                    <img src="assets/store/img/product/product-8.webp" alt="Product" class="img-fluid">
-                    <span class="item-qty">2</span>
-                  </div>
-                  <div class="item-info">
-                    <h5>Vestibulum Ante</h5>
-                    <span class="item-meta">Shade: Ivory | Fit: L</span>
-                  </div>
-                  <div class="item-cost">$59.99</div>
-                </div><!-- End Summary Item -->
-              </div>
-
-              <div class="coupon-field">
-                <div class="input-group">
-                  <input type="text" class="form-control" placeholder="Discount Code" aria-label="Discount Code">
-                  <button class="btn" type="button">Redeem</button>
-                </div>
-              </div>
+              <div class="summary-items">${summaryItems}</div>
 
               <div class="summary-breakdown">
                 <div class="breakdown-row d-flex justify-content-between">
                   <span>Subtotal</span>
-                  <span>$209.97</span>
+                  <span>Rp ${subtotal.toLocaleString('id-ID')}</span>
                 </div>
                 <div class="breakdown-row d-flex justify-content-between">
-                  <span>Delivery</span>
-                  <span>$9.99</span>
-                </div>
-                <div class="breakdown-row d-flex justify-content-between">
-                  <span>Estimated Tax</span>
-                  <span>$21.00</span>
+                  <span>Shipping</span>
+                  <span>Rp ${shippingCost.toLocaleString('id-ID')}</span>
                 </div>
                 <div class="breakdown-total d-flex justify-content-between">
-                  <span>Order Total</span>
-                  <span>$240.96</span>
+                  <span>Total</span>
+                  <span>Rp ${grandTotal.toLocaleString('id-ID')}</span>
                 </div>
               </div>
 
@@ -109,169 +186,114 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             </div>
           </div>
 
-          <!-- Checkout Form - Right Side -->
+          <!-- Checkout Form -->
           <div class="col-lg-8 order-lg-2 order-1">
             <div class="form-wrapper" data-aos="fade-left" data-aos-delay="150">
-              <form class="checkout-form">
+              <form id="checkoutForm" class="checkout-form">
 
-                <!-- Personal Details -->
+                <!-- Contact Information -->
                 <div class="form-block" id="customer-details">
                   <div class="block-heading">
                     <i class="bi bi-person-circle"></i>
-                    <h3>Personal Details</h3>
+                    <h3>Contact Information</h3>
                   </div>
                   <div class="block-body">
                     <div class="row">
                       <div class="col-md-6 form-group">
-                        <label for="fname">Given Name</label>
-                        <input type="text" name="first-name" class="form-control" id="fname" placeholder="Enter Given Name" required="">
+                        <label for="fullName">Full Name</label>
+                        <input type="text" class="form-control" id="fullName" value="${profile?.full_name || ''}" placeholder="Your full name" required>
                       </div>
                       <div class="col-md-6 form-group">
-                        <label for="lname">Family Name</label>
-                        <input type="text" name="last-name" class="form-control" id="lname" placeholder="Enter Family Name" required="">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" value="${profile?.phone || ''}" placeholder="+62 812-3456-7890" required>
                       </div>
                     </div>
                     <div class="row">
-                      <div class="col-md-6 form-group">
-                        <label for="cust-email">Email Address</label>
-                        <input type="email" class="form-control" name="email" id="cust-email" placeholder="Enter Email" required="">
-                      </div>
-                      <div class="col-md-6 form-group">
-                        <label for="cust-phone">Mobile Number</label>
-                        <input type="tel" class="form-control" name="phone" id="cust-phone" placeholder="Enter Mobile" required="">
+                      <div class="col-12 form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" class="form-control" id="email" value="${session.user.email || ''}" placeholder="your@email.com" required>
                       </div>
                     </div>
                   </div>
-                </div><!-- End Personal Details -->
+                </div>
 
-                <!-- Delivery Address -->
+                <!-- Shipping Address -->
                 <div class="form-block" id="delivery-address">
                   <div class="block-heading">
                     <i class="bi bi-geo-alt"></i>
-                    <h3>Delivery Address</h3>
+                    <h3>Shipping Address</h3>
                   </div>
                   <div class="block-body">
                     <div class="row">
-                      <div class="col-md-8 form-group">
-                        <label for="street">Street Address</label>
-                        <input type="text" class="form-control" name="address" id="street" placeholder="Enter Street Address" required="">
-                      </div>
-                      <div class="col-md-4 form-group">
-                        <label for="unit">Unit / Suite</label>
-                        <input type="text" class="form-control" name="apartment" id="unit" placeholder="Apt, Unit, etc.">
+                      <div class="col-12 form-group">
+                        <label for="address">Street Address</label>
+                        <input type="text" class="form-control" id="address" value="${profile?.address || ''}" placeholder="Jl. Raya Darmo No. 12" required>
                       </div>
                     </div>
                     <div class="row">
-                      <div class="col-md-5 form-group">
-                        <label for="checkout-city">City</label>
-                        <input type="text" name="city" class="form-control" id="checkout-city" placeholder="City" required="">
+                      <div class="col-md-6 form-group">
+                        <label for="city">City</label>
+                        <select class="form-select" id="city" required>
+                          <option value="">Select City</option>
+                          <option value="Bandung">Bandung</option>
+                          <option value="Jakarta">Jakarta</option>
+                          <option value="Bogor">Bogor</option>
+                          <option value="Depok">Depok</option>
+                          <option value="Tangerang">Tangerang</option>
+                          <option value="Bekasi">Bekasi</option>
+                          <option value="Surabaya">Surabaya</option>
+                          <option value="Yogyakarta">Yogyakarta</option>
+                          <option value="Semarang">Semarang</option>
+                          <option value="Medan">Medan</option>
+                          <option value="Makassar">Makassar</option>
+                          <option value="Bali">Bali</option>
+                        </select>
                       </div>
-                      <div class="col-md-4 form-group">
-                        <label for="checkout-state">State / Province</label>
-                        <input type="text" name="state" class="form-control" id="checkout-state" placeholder="State" required="">
-                      </div>
-                      <div class="col-md-3 form-group">
-                        <label for="postal">Postal Code</label>
-                        <input type="text" name="zip" class="form-control" id="postal" placeholder="ZIP" required="">
-                      </div>
-                    </div>
-                    <div class="form-group">
-                      <label for="checkout-country">Country / Region</label>
-                      <select class="form-select" id="checkout-country" name="country" required="">
-                        <option value="">Choose Country</option>
-                        <option value="US">United States</option>
-                        <option value="CA">Canada</option>
-                        <option value="UK">United Kingdom</option>
-                        <option value="AU">Australia</option>
-                        <option value="DE">Germany</option>
-                        <option value="FR">France</option>
-                      </select>
-                    </div>
-                    <div class="d-flex flex-wrap gap-4 mt-2">
-                      <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="remember-address" name="save-address">
-                        <label class="form-check-label" for="remember-address">Remember this address</label>
-                      </div>
-                      <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="same-billing" name="billing-same" checked="">
-                        <label class="form-check-label" for="same-billing">Use as billing address</label>
+                      <div class="col-md-6 form-group">
+                        <label for="postal">ZIP Code</label>
+                        <input type="text" class="form-control" id="postal" placeholder="60111">
                       </div>
                     </div>
                   </div>
-                </div><!-- End Delivery Address -->
+                </div>
 
-                <!-- Payment Info -->
+                <!-- Payment Method -->
                 <div class="form-block" id="payment-info">
                   <div class="block-heading">
                     <i class="bi bi-wallet2"></i>
-                    <h3>Payment Info</h3>
+                    <h3>Payment Method</h3>
                   </div>
                   <div class="block-body">
                     <div class="pay-methods">
                       <label class="pay-method active">
-                        <input type="radio" name="payment-method" id="pay-card" checked="">
+                        <input type="radio" name="payment-method" value="cod" checked>
                         <span class="method-inner">
-                          <i class="bi bi-credit-card-2-front"></i>
-                          <span>Card</span>
+                          <i class="bi bi-cash"></i>
+                          <span>Cash on Delivery (COD)</span>
                         </span>
                       </label>
                       <label class="pay-method">
-                        <input type="radio" name="payment-method" id="pay-paypal">
+                        <input type="radio" name="payment-method" value="transfer">
                         <span class="method-inner">
-                          <i class="bi bi-paypal"></i>
-                          <span>PayPal</span>
-                        </span>
-                      </label>
-                      <label class="pay-method">
-                        <input type="radio" name="payment-method" id="pay-apple">
-                        <span class="method-inner">
-                          <i class="bi bi-apple"></i>
-                          <span>Apple Pay</span>
+                          <i class="bi bi-bank"></i>
+                          <span>Bank Transfer</span>
                         </span>
                       </label>
                     </div>
 
-                    <div class="pay-details" id="card-form">
-                      <div class="form-group">
-                        <label for="cardnum">Card Number</label>
-                        <div class="card-input-wrap">
-                          <input type="text" class="form-control" name="card-number" id="cardnum" placeholder="0000 0000 0000 0000" required="">
-                          <div class="card-brands">
-                            <i class="bi bi-credit-card-2-front"></i>
-                            <i class="bi bi-credit-card"></i>
-                          </div>
-                        </div>
+                    <!-- ===== UPLOAD BUKTI TRANSFER (HANYA UNTUK BANK TRANSFER) ===== -->
+                    <div id="uploadProofContainer" style="display: none; margin-top: 15px; padding: 15px; border: 2px dashed #dee2e6; border-radius: 8px;">
+                      <h6><i class="bi bi-upload me-2"></i>Upload Bukti Transfer</h6>
+                      <p class="text-muted small">Silakan upload bukti transfer setelah melakukan pembayaran.</p>
+                      <div class="mb-3">
+                        <label for="proofFile" class="form-label">Pilih File (JPG/PNG/PDF)</label>
+                        <input type="file" class="form-control" id="proofFile" accept=".jpg,.jpeg,.png,.pdf">
+                        <small class="text-muted">Maksimal 5MB</small>
                       </div>
-                      <div class="row">
-                        <div class="col-md-4 form-group">
-                          <label for="exp-date">Expiry Date</label>
-                          <input type="text" class="form-control" name="expiry" id="exp-date" placeholder="MM/YY" required="">
-                        </div>
-                        <div class="col-md-4 form-group">
-                          <label for="sec-code">CVV</label>
-                          <div class="cvv-field">
-                            <input type="text" class="form-control" name="cvv" id="sec-code" placeholder="•••" required="">
-                            <span class="cvv-info" data-bs-toggle="tooltip" data-bs-placement="top" title="3-digit security code on the back of your card">
-                              <i class="bi bi-info-circle"></i>
-                            </span>
-                          </div>
-                        </div>
-                        <div class="col-md-4 form-group">
-                          <label for="cardholder">Cardholder</label>
-                          <input type="text" class="form-control" name="card-name" id="cardholder" placeholder="Full Name" required="">
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="pay-details d-none" id="paypal-form">
-                      <p class="alt-pay-msg">You will be forwarded to PayPal to finalize your transaction securely.</p>
-                    </div>
-
-                    <div class="pay-details d-none" id="apple-form">
-                      <p class="alt-pay-msg">You will be asked to confirm payment through Apple Pay.</p>
+                      <div id="uploadStatus" class="alert alert-info d-none"></div>
                     </div>
                   </div>
-                </div><!-- End Payment Info -->
+                </div>
 
                 <!-- Confirmation -->
                 <div class="form-block" id="confirmation">
@@ -281,68 +303,231 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                   </div>
                   <div class="block-body">
                     <div class="form-check agreement-check">
-                      <input class="form-check-input" type="checkbox" id="agree-terms" name="terms" required="">
-                      <label class="form-check-label" for="agree-terms">
-                        I accept the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms of Service</a> and <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy Policy</a>
+                      <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                      <label class="form-check-label" for="agreeTerms">
+                        I accept the Terms of Service and Privacy Policy
                       </label>
                     </div>
-                    <div class="success-message d-none">Your order has been confirmed successfully! Thank you for shopping with us.</div>
-                    <button type="submit" class="btn submit-order-btn">
+                    <div id="orderError" class="alert alert-danger d-none"></div>
+                    <button type="submit" class="btn submit-order-btn" id="submitOrder">
                       <i class="bi bi-lock me-2"></i>
-                      <span>Complete Purchase</span>
-                      <span class="order-amount">$240.96</span>
+                      <span>Place Order</span>
+                      <span class="order-amount">Rp ${grandTotal.toLocaleString('id-ID')}</span>
                     </button>
                   </div>
-                </div><!-- End Confirmation -->
+                </div>
 
               </form>
             </div>
           </div>
-
         </div>
+      `;
 
-        <!-- Terms Modal -->
-        <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-scrollable">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="termsModalLabel">Terms of Service</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.</p>
-                <p>Suspendisse in orci enim. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.</p>
-                <p>Suspendisse in orci enim. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.</p>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Understood</button>
-              </div>
-            </div>
-          </div>
-        </div>
+      loadingEl.style.display = 'none';
+      contentEl.style.display = 'block';
 
-        <!-- Privacy Modal -->
-        <div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-scrollable">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="privacyModalLabel">Privacy Policy</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim.</p>
-                <p>Suspendisse in orci enim. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.</p>
-                <p>Suspendisse in orci enim. Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor.</p>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Understood</button>
-              </div>
-            </div>
-          </div>
-        </div>
+      // ============= TOGGLE UPLOAD PROOF =============
+      document.querySelectorAll('input[name="payment-method"]').forEach((radio) => {
+        radio.addEventListener('change', function() {
+          const uploadContainer = document.getElementById('uploadProofContainer');
+          if (this.value === 'transfer') {
+            uploadContainer.style.display = 'block';
+          } else {
+            uploadContainer.style.display = 'none';
+          }
+        });
+      });
 
-      </div>
+      // ============= SUBMIT ORDER =============
+      document.getElementById('checkoutForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const errorEl = document.getElementById('orderError');
+        const submitBtn = document.getElementById('submitOrder');
+        const agreeTerms = document.getElementById('agreeTerms');
 
-    </section><!-- /Checkout Section -->
+        errorEl?.classList.add('d-none');
+        submitBtn?.setAttribute('disabled', 'true');
 
+        if (!agreeTerms?.checked) {
+          if (errorEl) {
+            errorEl.textContent = 'You must agree to the Terms of Service';
+            errorEl.classList.remove('d-none');
+          }
+          submitBtn?.removeAttribute('disabled');
+          return;
+        }
+
+        const fullName = document.getElementById('fullName').value;
+        const email = document.getElementById('email').value;
+        const phone = document.getElementById('phone').value;
+        const city = document.getElementById('city').value;
+        const address = document.getElementById('address').value;
+        const postal = document.getElementById('postal').value;
+        const paymentMethod = document.querySelector('input[name="payment-method"]:checked')?.value || 'cod';
+
+        if (!fullName || !email || !phone || !city || !address) {
+          if (errorEl) {
+            errorEl.textContent = 'Please fill all required fields';
+            errorEl.classList.remove('d-none');
+          }
+          submitBtn?.removeAttribute('disabled');
+          return;
+        }
+
+        // ===== VALIDASI UPLOAD BUKTI UNTUK TRANSFER =====
+        if (paymentMethod === 'transfer') {
+          const proofFile = document.getElementById('proofFile');
+          if (!proofFile || !proofFile.files || proofFile.files.length === 0) {
+            if (errorEl) {
+              errorEl.textContent = 'Silakan upload bukti transfer terlebih dahulu!';
+              errorEl.classList.remove('d-none');
+            }
+            submitBtn?.removeAttribute('disabled');
+            return;
+          }
+        }
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          window.location.href = '/login';
+          return;
+        }
+
+        try {
+          const { data: cartData } = await supabase
+            .from('cart')
+            .select(`
+              quantity,
+              product_id,
+              products (price, discount)
+            `)
+            .eq('user_id', session.user.id);
+
+          let subTotal = 0;
+          cartData?.forEach((item) => {
+            const price = item.products.price;
+            const discount = item.products.discount || 0;
+            const discountedPrice = price * (1 - discount / 100);
+            subTotal += discountedPrice * item.quantity;
+          });
+
+          const shipCost = 20000;
+          const total = subTotal + shipCost;
+          const orderNumber = 'ORD-' + Date.now().toString().slice(-8);
+
+          // ===== UPLOAD FILE KE SUPABASE STORAGE =====
+let proofUrl = null;
+if (paymentMethod === 'transfer') {
+  const proofFile = document.getElementById('proofFile');
+  const file = proofFile.files[0];
+  
+  // Validasi file
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+  if (!allowedTypes.includes(file.type)) {
+    if (errorEl) {
+      errorEl.textContent = 'Format file tidak didukung. Gunakan JPG, PNG, atau PDF.';
+      errorEl.classList.remove('d-none');
+    }
+    submitBtn?.removeAttribute('disabled');
+    return;
+  }
+
+  // Validasi ukuran (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    if (errorEl) {
+      errorEl.textContent = 'Ukuran file maksimal 5MB.';
+      errorEl.classList.remove('d-none');
+    }
+    submitBtn?.removeAttribute('disabled');
+    return;
+  }
+
+  const fileExt = file.name.split('.').pop();
+  const fileName = `proof_${orderNumber}_${Date.now()}.${fileExt}`;
+  const filePath = `payment-proofs/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('order-proofs')
+    .upload(filePath, file, {
+      contentType: file.type,
+      cacheControl: '3600',
+      upsert: false
+    });
+
+  if (uploadError) {
+    console.error('Upload error:', uploadError);
+    if (errorEl) {
+      errorEl.textContent = 'Gagal upload bukti transfer. Error: ' + uploadError.message;
+      errorEl.classList.remove('d-none');
+    }
+    submitBtn?.removeAttribute('disabled');
+    return;
+  }
+
+  // Ambil public URL
+  const { data: urlData } = supabase.storage
+    .from('order-proofs')
+    .getPublicUrl(filePath);
+  
+  proofUrl = urlData.publicUrl;
+}
+
+          const { data: order, error: orderError } = await supabase
+            .from('orders')
+            .insert({
+              user_id: session.user.id,
+              order_number: orderNumber,
+              total: subTotal,
+              shipping_cost: shipCost,
+              grand_total: total,
+              status: paymentMethod === 'cod' ? 'pending' : 'paid',
+              payment_method: paymentMethod,
+              payment_status: paymentMethod === 'cod' ? 'unpaid' : 'paid',
+              shipping_address: address + (postal ? ', ' + postal : ''),
+              city: city,
+              proof_url: proofUrl,
+              notes: `Full Name: ${fullName}, Email: ${email}, Phone: ${phone}`
+            })
+            .select()
+            .single();
+
+          if (orderError) throw orderError;
+
+          for (const item of cartData || []) {
+            const price = item.products.price;
+            const discount = item.products.discount || 0;
+            const discountedPrice = price * (1 - discount / 100);
+
+            await supabase
+              .from('order_items')
+              .insert({
+                order_id: order.id,
+                product_id: item.product_id,
+                quantity: item.quantity,
+                price: discountedPrice,
+                discount_applied: discount
+              });
+          }
+
+          await supabase
+            .from('cart')
+            .delete()
+            .eq('user_id', session.user.id);
+
+          window.location.href = `/order-confirmation?order=${order.id}`;
+
+        } catch (error) {
+          console.error('Checkout error:', error);
+          if (errorEl) {
+            errorEl.textContent = error.message || 'Failed to process order. Please try again.';
+            errorEl.classList.remove('d-none');
+          }
+          submitBtn?.removeAttribute('disabled');
+        }
+      });
+    }
+
+    loadCheckout();
+  </script>
 </BaseLayout>

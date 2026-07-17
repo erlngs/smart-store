@@ -1,285 +1,285 @@
 ---
+// @ts-nocheck
+// src/pages/order-confirmation.astro
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { supabase } from "../lib/supabase/client";
+
+// Ambil order ID dari URL
+const orderId = Astro.url.searchParams.get('order');
+
+let order = null;
+let orderItems = [];
+let profile = null;
+let grandTotal = 0;
+
+if (orderId) {
+  // Ambil data order
+  const { data: orderData } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('id', orderId)
+    .single();
+  order = orderData;
+
+  if (order) {
+    // Ambil order items dengan produk
+    const { data: items } = await supabase
+      .from('order_items')
+      .select(`
+        *,
+        products (
+          id,
+          name,
+          slug,
+          image_url
+        )
+      `)
+      .eq('order_id', order.id);
+    orderItems = items || [];
+
+    // Ambil profile user
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('full_name, phone, address')
+      .eq('id', order.user_id)
+      .single();
+    profile = profileData;
+
+    grandTotal = order.grand_total || 0;
+  }
+}
 ---
 
-<BaseLayout title="order-confirmation - SmartStore" bodyClass="order-confirmation">
+<BaseLayout title="Order Confirmation - SmartStore" bodyClass="order-confirmation">
 
-    <!-- Page Title -->
-    <div class="page-title light-background">
-      <div class="container d-lg-flex justify-content-between align-items-center">
-        <h1 class="mb-2 mb-lg-0">Order Confirmation</h1>
-        <nav class="breadcrumbs">
-          <ol>
-            <li><a href="index.html">Home</a></li>
-            <li class="current">Order Confirmation</li>
-          </ol>
-        </nav>
-      </div>
-    </div><!-- End Page Title -->
+  <!-- Page Title -->
+  <div class="page-title light-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+      <h1 class="mb-2 mb-lg-0">Order Confirmation</h1>
+      <nav class="breadcrumbs">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li class="current">Order Confirmation</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
 
-    <!-- Order Confirmation Section -->
-    <section id="order-confirmation" class="order-confirmation section">
+  <!-- Order Confirmation Section -->
+  <section id="order-confirmation" class="order-confirmation section">
 
-      <div class="container" data-aos="fade-up" data-aos-delay="100">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
 
-        <!-- Success Banner -->
-        <div class="confirmation-banner" data-aos="zoom-in" data-aos-delay="100">
-          <div class="banner-icon">
-            <i class="bi bi-bag-check-fill"></i>
-          </div>
-          <div class="banner-text">
-            <h2>Your Purchase is Confirmed!</h2>
-            <p>Praesent sapien massa, convallis a pellentesque nec, egestas non nisi. Order updates will be sent to your inbox shortly.</p>
-          </div>
-          <div class="order-ref">
-            <span class="ref-label">Reference</span>
-            <span class="ref-number">#TXN-482156</span>
-            <span class="ref-date">February 18, 2026</span>
-          </div>
-        </div>
-
-        <!-- Horizontal Progress Tracker -->
-        <div class="progress-tracker" data-aos="fade-up" data-aos-delay="150">
-          <div class="row g-0">
-            <div class="col-3">
-              <div class="tracker-step done">
-                <div class="step-dot"></div>
-                <span>Verified</span>
-              </div>
+      {order ? (
+        <>
+          <!-- Success Banner -->
+          <div class="confirmation-banner" data-aos="zoom-in" data-aos-delay="100">
+            <div class="banner-icon">
+              <i class="bi bi-bag-check-fill"></i>
             </div>
-            <div class="col-3">
-              <div class="tracker-step active">
-                <div class="step-dot"></div>
-                <span>In Progress</span>
-              </div>
+            <div class="banner-text">
+              <h2>Your Purchase is Confirmed!</h2>
+              <p>Thank you for your order. We'll send you a confirmation email shortly.</p>
             </div>
-            <div class="col-3">
-              <div class="tracker-step">
-                <div class="step-dot"></div>
-                <span>Dispatched</span>
-              </div>
-            </div>
-            <div class="col-3">
-              <div class="tracker-step">
-                <div class="step-dot"></div>
-                <span>Arrived</span>
-              </div>
+            <div class="order-ref">
+              <span class="ref-label">Reference</span>
+              <span class="ref-number">#{order.order_number || order.id?.slice(0, 8)}</span>
+              <span class="ref-date">{new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
             </div>
           </div>
-        </div>
 
-        <!-- Info Cards Row -->
-        <div class="row g-4 info-cards-row" data-aos="fade-up" data-aos-delay="200">
-          <!-- Shipping Card -->
-          <div class="col-lg-4 col-md-6">
-            <div class="info-tile">
-              <div class="tile-header">
-                <i class="bi bi-pin-map-fill"></i>
-                <h4>Delivery Address</h4>
+          <!-- Horizontal Progress Tracker -->
+          <div class="progress-tracker" data-aos="fade-up" data-aos-delay="150">
+            <div class="row g-0">
+              <div class="col-3">
+                <div class="tracker-step done">
+                  <div class="step-dot"></div>
+                  <span>Verified</span>
+                </div>
               </div>
-              <div class="tile-body">
-                <address>
-                  Sarah Mitchell<br>
-                  1452 Birchwood Drive<br>
-                  Portland, OR 97205<br>
-                  United States
-                </address>
-                <div class="tile-contact">
-                  <p><i class="bi bi-envelope"></i> sarah.m@example.com</p>
-                  <p><i class="bi bi-phone"></i> +1 (555) 847-2391</p>
+              <div class="col-3">
+                <div class={`tracker-step ${order.status === 'pending' || order.status === 'paid' ? 'active' : ''}`}>
+                  <div class="step-dot"></div>
+                  <span>In Progress</span>
+                </div>
+              </div>
+              <div class="col-3">
+                <div class={`tracker-step ${order.status === 'shipped' ? 'active' : ''}`}>
+                  <div class="step-dot"></div>
+                  <span>Dispatched</span>
+                </div>
+              </div>
+              <div class="col-3">
+                <div class={`tracker-step ${order.status === 'delivered' ? 'active' : ''}`}>
+                  <div class="step-dot"></div>
+                  <span>Arrived</span>
                 </div>
               </div>
             </div>
-          </div><!-- End Shipping Card -->
+          </div>
 
-          <!-- Payment Card -->
-          <div class="col-lg-4 col-md-6">
-            <div class="info-tile">
-              <div class="tile-header">
-                <i class="bi bi-wallet2"></i>
-                <h4>Payment Method</h4>
-              </div>
-              <div class="tile-body">
-                <div class="payment-badge">
-                  <i class="bi bi-credit-card-2-front"></i>
-                  <div>
-                    <strong>Visa Platinum</strong>
-                    <span>•••• •••• •••• 4519</span>
+          <!-- Info Cards Row -->
+          <div class="row g-4 info-cards-row" data-aos="fade-up" data-aos-delay="200">
+            <!-- Shipping Card -->
+            <div class="col-lg-4 col-md-6">
+              <div class="info-tile">
+                <div class="tile-header">
+                  <i class="bi bi-pin-map-fill"></i>
+                  <h4>Delivery Address</h4>
+                </div>
+                <div class="tile-body">
+                  <address>
+                    {profile?.full_name || 'Customer'}<br>
+                    {order.shipping_address || 'No address provided'}<br>
+                    {order.city || ''}
+                  </address>
+                  <div class="tile-contact">
+                    <p><i class="bi bi-envelope"></i> {order.notes?.match(/Email: ([^,]+)/)?.[1] || '-'}</p>
+                    <p><i class="bi bi-phone"></i> {order.notes?.match(/Phone: ([^,]+)/)?.[1] || '-'}</p>
                   </div>
                 </div>
-                <div class="billing-note">
-                  <i class="bi bi-info-circle"></i>
-                  <span>Billing matches delivery address</span>
+              </div>
+            </div>
+
+            <!-- Payment Card -->
+            <div class="col-lg-4 col-md-6">
+              <div class="info-tile">
+                <div class="tile-header">
+                  <i class="bi bi-wallet2"></i>
+                  <h4>Payment Method</h4>
+                </div>
+                <div class="tile-body">
+                  <div class="payment-badge">
+                    <i class="bi bi-credit-card-2-front"></i>
+                    <div>
+                      <strong>{order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method === 'transfer' ? 'Bank Transfer' : order.payment_method || 'Unknown'}</strong>
+                      <span>Status: {order.payment_status || 'unpaid'}</span>
+                    </div>
+                  </div>
+                  <div class="billing-note">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Billing matches delivery address</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div><!-- End Payment Card -->
 
-          <!-- Summary Card -->
-          <div class="col-lg-4 col-md-12">
-            <div class="info-tile summary-tile">
-              <div class="tile-header">
-                <i class="bi bi-receipt"></i>
-                <h4>Price Breakdown</h4>
-              </div>
-              <div class="tile-body">
-                <ul class="cost-list">
-                  <li><span>Subtotal</span><span>$174.98</span></li>
-                  <li><span>Delivery</span><span>Free</span></li>
-                  <li><span>Tax</span><span>$14.87</span></li>
-                  <li class="grand-total"><span>Grand Total</span><span>$189.85</span></li>
-                </ul>
+            <!-- Summary Card -->
+            <div class="col-lg-4 col-md-12">
+              <div class="info-tile summary-tile">
+                <div class="tile-header">
+                  <i class="bi bi-receipt"></i>
+                  <h4>Price Breakdown</h4>
+                </div>
+                <div class="tile-body">
+                  <ul class="cost-list">
+                    <li><span>Subtotal</span><span>Rp {order.total?.toLocaleString('id-ID') || 0}</span></li>
+                    <li><span>Delivery</span><span>Rp {order.shipping_cost?.toLocaleString('id-ID') || 0}</span></li>
+                    <li class="grand-total"><span>Grand Total</span><span>Rp {order.grand_total?.toLocaleString('id-ID') || 0}</span></li>
+                  </ul>
+                </div>
               </div>
             </div>
-          </div><!-- End Summary Card -->
-        </div>
+          </div>
 
-        <!-- Ordered Products -->
-        <div class="ordered-products" data-aos="fade-up" data-aos-delay="250">
-          <h3>Purchased Items</h3>
-          <div class="row g-4">
+          <!-- Ordered Products -->
+          <div class="ordered-products" data-aos="fade-up" data-aos-delay="250">
+            <h3>Purchased Items</h3>
+            <div class="row g-4">
+              {orderItems && orderItems.length > 0 ? (
+                orderItems.map((item) => (
+                  <div class="col-md-6">
+                    <div class="product-row">
+                      <div class="product-thumb">
+                        <img src={item.products?.image_url || '/assets/store/img/product/product-placeholder.webp'} alt={item.products?.name || 'Product'} loading="lazy">
+                      </div>
+                      <div class="product-info">
+                        <h5>{item.products?.name || 'Product'}</h5>
+                        <div class="product-attrs">
+                          <span class="attr-tag">Qty: {item.quantity}</span>
+                          {item.discount_applied > 0 && (
+                            <span class="attr-tag" style="background: #dc3545; color: white;">Save {item.discount_applied}%</span>
+                          )}
+                        </div>
+                        <div class="product-qty-price">
+                          <span class="qty-label">Price per item</span>
+                          <span class="amount">Rp {item.price?.toLocaleString('id-ID') || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div class="col-12">
+                  <p class="text-muted">No items found</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <!-- Delivery & Support Row -->
+          <div class="row g-4 extras-row" data-aos="fade-up" data-aos-delay="300">
             <div class="col-md-6">
-              <div class="product-row">
-                <div class="product-thumb">
-                  <img src="assets/store/img/product/product-3.webp" alt="Product" loading="lazy">
+              <div class="delivery-card">
+                <div class="delivery-icon-wrapper">
+                  <i class="bi bi-truck"></i>
                 </div>
-                <div class="product-info">
-                  <h5>Premium Noise-Cancelling Headphones</h5>
-                  <div class="product-attrs">
-                    <span class="attr-tag">Color: Charcoal</span>
-                  </div>
-                  <div class="product-qty-price">
-                    <span class="qty-label">Qty: 1</span>
-                    <span class="amount">$109.99</span>
-                  </div>
+                <div class="delivery-details">
+                  <h5>Shipping Details</h5>
+                  <p><i class="bi bi-calendar3"></i> Expected arrival: 3-5 business days</p>
+                  <p><i class="bi bi-box-seam"></i> Standard Delivery</p>
+                  <p><i class="bi bi-tag"></i> Status: <span class="badge bg-{order.status === 'delivered' ? 'success' : order.status === 'cancelled' ? 'danger' : 'warning'}">{order.status || 'pending'}</span></p>
                 </div>
               </div>
-            </div><!-- End Product Item -->
+            </div>
             <div class="col-md-6">
-              <div class="product-row">
-                <div class="product-thumb">
-                  <img src="assets/store/img/product/product-5.webp" alt="Product" loading="lazy">
+              <div class="support-card">
+                <div class="support-icon-wrapper">
+                  <i class="bi bi-headset"></i>
                 </div>
-                <div class="product-info">
-                  <h5>Activity Monitoring Band</h5>
-                  <div class="product-attrs">
-                    <span class="attr-tag">Color: Slate</span>
-                    <span class="attr-tag">Size: Standard</span>
-                  </div>
-                  <div class="product-qty-price">
-                    <span class="qty-label">Qty: 1</span>
-                    <span class="amount">$64.99</span>
-                  </div>
+                <div class="support-details">
+                  <h5>Assistance Center</h5>
+                  <a href="/contact" class="support-link"><i class="bi bi-chat-left-text"></i> Reach Support Team</a>
+                  <a href="#" class="support-link"><i class="bi bi-book"></i> Browse Help Articles</a>
                 </div>
               </div>
-            </div><!-- End Product Item -->
+            </div>
           </div>
-        </div>
 
-        <!-- Delivery & Support Row -->
-        <div class="row g-4 extras-row" data-aos="fade-up" data-aos-delay="300">
-          <div class="col-md-6">
-            <div class="delivery-card">
-              <div class="delivery-icon-wrapper">
-                <i class="bi bi-truck"></i>
+          <!-- Action Buttons -->
+          <div class="cta-buttons" data-aos="fade-up" data-aos-delay="350">
+            <div class="row g-3 justify-content-center">
+              <div class="col-md-5 col-lg-4">
+                <a href="/category" class="btn btn-outline-shop">
+                  <i class="bi bi-shop"></i>
+                  Continue Shopping
+                </a>
               </div>
-              <div class="delivery-details">
-                <h5>Shipping Details</h5>
-                <p><i class="bi bi-calendar3"></i> Expected arrival: March 4-6, 2026</p>
-                <p><i class="bi bi-box-seam"></i> Standard Free Delivery</p>
-              </div>
-            </div>
-          </div><!-- End Delivery Card -->
-          <div class="col-md-6">
-            <div class="support-card">
-              <div class="support-icon-wrapper">
-                <i class="bi bi-headset"></i>
-              </div>
-              <div class="support-details">
-                <h5>Assistance Center</h5>
-                <a href="#" class="support-link"><i class="bi bi-chat-left-text"></i> Reach Support Team</a>
-                <a href="#" class="support-link"><i class="bi bi-book"></i> Browse Help Articles</a>
+              <div class="col-md-5 col-lg-4">
+                <a href="/account" class="btn btn-dashboard">
+                  Track in Dashboard
+                  <i class="bi bi-arrow-right-circle"></i>
+                </a>
               </div>
             </div>
-          </div><!-- End Support Card -->
-        </div>
+          </div>
 
-        <!-- Action Buttons -->
-        <div class="cta-buttons" data-aos="fade-up" data-aos-delay="350">
-          <div class="row g-3 justify-content-center">
-            <div class="col-md-5 col-lg-4">
-              <a href="#" class="btn btn-outline-shop">
-                <i class="bi bi-shop"></i>
-                Continue Shopping
-              </a>
-            </div>
-            <div class="col-md-5 col-lg-4">
-              <a href="#" class="btn btn-dashboard">
-                Track in Dashboard
-                <i class="bi bi-arrow-right-circle"></i>
-              </a>
+        </>
+      ) : (
+        <div class="row justify-content-center">
+          <div class="col-lg-6">
+            <div class="card text-center p-5">
+              <i class="bi bi-exclamation-triangle" style="font-size: 64px; color: #f59e0b;"></i>
+              <h4 class="mt-3">Order Not Found</h4>
+              <p class="text-muted">We couldn't find your order. Please check your order reference.</p>
+              <a href="/" class="btn btn-primary">Go to Home</a>
             </div>
           </div>
         </div>
+      )}
 
-        <!-- Suggested Products -->
-        <div class="suggested-products" data-aos="fade-up" data-aos-delay="400">
-          <h3>Explore Similar Products</h3>
-          <div class="row g-4">
-            <div class="col-6 col-lg-3">
-              <div class="suggestion-card">
-                <div class="suggestion-img">
-                  <img src="assets/store/img/product/product-2.webp" alt="Suggested Product" loading="lazy">
-                  <a href="#" class="quick-add"><i class="bi bi-cart-plus"></i></a>
-                </div>
-                <div class="suggestion-details">
-                  <h6>Compact Audio Speaker</h6>
-                  <span class="suggestion-price">$44.99</span>
-                </div>
-              </div>
-            </div><!-- End Suggestion -->
-            <div class="col-6 col-lg-3">
-              <div class="suggestion-card">
-                <div class="suggestion-img">
-                  <img src="assets/store/img/product/product-6.webp" alt="Suggested Product" loading="lazy">
-                  <a href="#" class="quick-add"><i class="bi bi-cart-plus"></i></a>
-                </div>
-                <div class="suggestion-details">
-                  <h6>USB-C Power Bank</h6>
-                  <span class="suggestion-price">$29.99</span>
-                </div>
-              </div>
-            </div><!-- End Suggestion -->
-            <div class="col-6 col-lg-3 d-none d-lg-block">
-              <div class="suggestion-card">
-                <div class="suggestion-img">
-                  <img src="assets/store/img/product/product-12.webp" alt="Suggested Product" loading="lazy">
-                  <a href="#" class="quick-add"><i class="bi bi-cart-plus"></i></a>
-                </div>
-                <div class="suggestion-details">
-                  <h6>Digital Wrist Watch</h6>
-                  <span class="suggestion-price">$119.99</span>
-                </div>
-              </div>
-            </div><!-- End Suggestion -->
-            <div class="col-6 col-lg-3 d-none d-lg-block">
-              <div class="suggestion-card">
-                <div class="suggestion-img">
-                  <img src="assets/store/img/product/product-4.webp" alt="Suggested Product" loading="lazy">
-                  <a href="#" class="quick-add"><i class="bi bi-cart-plus"></i></a>
-                </div>
-                <div class="suggestion-details">
-                  <h6>Wireless Charging Pad</h6>
-                  <span class="suggestion-price">$24.99</span>
-                </div>
-              </div>
-            </div><!-- End Suggestion -->
-          </div>
-        </div>
+    </div>
 
-      </div>
+  </section>
 
-    </section><!-- /Order Confirmation Section -->
-
-    </BaseLayout>
-    
+</BaseLayout>

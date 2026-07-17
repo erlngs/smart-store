@@ -140,10 +140,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   </div>
 
   <script>
+    //@ts-nocheck
     import { supabase } from "@/lib/supabase/client";
 
-    const loadingEl = document.getElementById('account-loading') as HTMLElement | null;
-    const contentEl = document.getElementById('account-content') as HTMLElement | null;
+    const loadingEl = document.getElementById('account-loading');
+    const contentEl = document.getElementById('account-content');
 
     async function loadAccount() {
       try {
@@ -168,7 +169,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           .select('*')
           .eq('user_id', session.user.id)
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(10);
 
         const { count } = await supabase
           .from('orders')
@@ -176,7 +177,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           .eq('user_id', session.user.id);
 
         // Update UI
-        const firstName = profile?.full_name || 'User';
+        const firstName = (profile as any)?.full_name || 'User';
         const userNameEl = document.getElementById('userName');
         const userAvatarEl = document.getElementById('userAvatar');
         const orderCountEl = document.getElementById('orderCount');
@@ -185,19 +186,19 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         if (orderCountEl) orderCountEl.textContent = String(count || 0);
 
         // Isi form
-        const fullNameEl = document.getElementById('fullName') as HTMLInputElement | null;
-        const phoneEl = document.getElementById('phone') as HTMLInputElement | null;
-        const addressEl = document.getElementById('address') as HTMLTextAreaElement | null;
-        if (fullNameEl) fullNameEl.value = profile?.full_name || '';
-        if (phoneEl) phoneEl.value = profile?.phone || '';
-        if (addressEl) addressEl.value = profile?.address || '';
+        const fullNameEl = document.getElementById('fullName');
+        const phoneEl = document.getElementById('phone');
+        const addressEl = document.getElementById('address');
+        if (fullNameEl) fullNameEl.value = (profile as any)?.full_name || '';
+        if (phoneEl) phoneEl.value = (profile as any)?.phone || '';
+        if (addressEl) addressEl.value = (profile as any)?.address || '';
 
         // Render orders
         const ordersList = document.getElementById('ordersList');
         if (ordersList) {
           if (orders && orders.length > 0) {
-            ordersList.innerHTML = orders.map((order) => `
-              <div class="order-row status-processing" data-aos="fade-up">
+            ordersList.innerHTML = (orders as any[]).map((order) => `
+              <div class="order-row status-processing" data-aos="fade-up" data-order-id="${order.id}">
                 <div class="row align-items-center g-3">
                   <div class="col-lg-5">
                     <div class="order-main">
@@ -217,13 +218,34 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                   </div>
                   <div class="col-lg-3">
                     <div class="order-actions">
-                      <button type="button" class="btn-outline-action">Track</button>
-                      <button type="button" class="btn-filled-action">Details</button>
+                      <button type="button" class="btn-outline-action track-btn" data-order-id="${order.id}">
+                        <i class="bi bi-truck"></i> Track
+                      </button>
+                      <button type="button" class="btn-filled-action detail-btn" data-order-id="${order.id}">
+                        <i class="bi bi-eye"></i> Details
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
             `).join('');
+
+            // ============= EVENT LISTENER UNTUK TOMBOL TRACK =============
+            document.querySelectorAll('.track-btn').forEach((btn) => {
+              btn.addEventListener('click', function() {
+                const orderId = this.dataset.orderId;
+                window.location.href = `/order-confirmation?order=${orderId}`;
+              });
+            });
+
+            // ============= EVENT LISTENER UNTUK TOMBOL DETAILS =============
+            document.querySelectorAll('.detail-btn').forEach((btn) => {
+              btn.addEventListener('click', function() {
+                const orderId = this.dataset.orderId;
+                window.location.href = `/order-confirmation?order=${orderId}`;
+              });
+            });
+
           } else {
             ordersList.innerHTML = `
               <div class="text-center py-5">
@@ -277,6 +299,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
+        // @ts-ignore
         const { error } = await supabase
           .from('profiles')
           .update({ full_name: fullName, phone: phone, address: address })
@@ -307,5 +330,25 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
     // Jalankan
     loadAccount();
+
+    // ===== BUKA TAB ORDERS JIKA ADA PARAMETER tab=orders =====
+    (function openOrdersTab() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tab = urlParams.get('tab');
+      
+      if (tab === 'orders') {
+        const ordersTab = document.querySelector('[data-bs-target="#account-tab-orders"]');
+        if (ordersTab) {
+          // Hapus active dari semua tab
+          document.querySelectorAll('.nav-link').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('show', 'active'));
+          
+          // Aktifkan tab orders
+          ordersTab.classList.add('active');
+          const target = document.getElementById('account-tab-orders');
+          if (target) target.classList.add('show', 'active');
+        }
+      }
+    })();
   </script>
 </BaseLayout>

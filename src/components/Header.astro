@@ -1,10 +1,12 @@
 ---
 const currentPath = Astro.url.pathname;
 
-// Ambil dari middleware, bukan panggil supabase langsung
+// Ambil dari middleware
 const { user, supabase } = Astro.locals;
 
 let profile = null;
+let cartCount = 0;
+
 if (user) {
   const { data } = await supabase
     .from('profiles')
@@ -12,6 +14,13 @@ if (user) {
     .eq('id', user.id)
     .single();
   profile = data;
+
+  // Ambil cart count dari server
+  const { count } = await supabase
+    .from('cart')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id);
+  cartCount = count || 0;
 }
 ---
 
@@ -120,15 +129,24 @@ if (user) {
               <button class="action-icon" data-bs-toggle="dropdown" aria-label="Cart">
                 <i class="bi bi-cart3"></i>
                 <span class="action-label d-none d-md-inline">Cart</span>
-                <span class="count-dot" id="cartCount">0</span>
+                {cartCount > 0 && (
+                  <span class="count-dot" id="cartCountBadge">{cartCount}</span>
+                )}
+                {cartCount === 0 && (
+                  <span class="count-dot" id="cartCountBadge" style="display: none;">0</span>
+                )}
               </button>
               <div class="dropdown-menu cart-panel" id="cartPanel">
                 <div class="cart-panel-header">
                   <h6>Shopping Cart</h6>
-                  <span class="item-count" id="cartItemCount">0 items</span>
+                  <span class="item-count" id="cartItemCount">{cartCount} items</span>
                 </div>
                 <div class="cart-panel-body" id="cartItems">
-                  <div class="text-center text-muted py-3">Keranjang kosong</div>
+                  {cartCount > 0 ? (
+                    <div id="cartItemsList"></div>
+                  ) : (
+                    <div class="text-center text-muted py-3">Keranjang kosong</div>
+                  )}
                 </div>
                 <div class="cart-panel-footer">
                   <div class="cart-subtotal">
@@ -171,6 +189,7 @@ if (user) {
             <li><a href="/cart" class:list={{ active: currentPath === "/cart" }}>Cart</a></li>
             <li><a href="/checkout" class:list={{ active: currentPath === "/checkout" }}>Checkout</a></li>
             <li><a href="/contact" class:list={{ active: currentPath === "/contact" }}>Contact</a></li>
+            <li><a href="/account" class:list={{ active: currentPath === "/account" }}>Track Order</a></li>
           </ul>
         </nav>
       </div>
@@ -191,9 +210,10 @@ if (user) {
   </header>
 
 <script>
+  //@ts-nocheck
   import { supabase } from "@/lib/supabase/client";
 
-  // Load products untuk dropdown
+  // ============= FUNGSI LOAD PRODUCT DROPDOWN =============
   async function loadProductDropdown() {
     const { data: products } = await supabase
       .from('products')
@@ -215,24 +235,128 @@ if (user) {
     }
   }
 
-  // Load cart count
-  async function loadCartCount() {
+  // ============= FUNGSI LOAD CART ITEMS UNTUK DROPDOWN =============
+  async function loadCartItems() {
+    const cartItemsList = document.getElementById('cartItemsList');
+    const cartSubtotal = document.getElementById('cartSubtotal');
+    const cartItemCount = document.getElementById('cartItemCount');
+    const cartCountBadge = document.getElementById('cartCountBadge');
+
     const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      if (cartItemsList) cartItemsList.innerHTML = '<div class="text-center text-muted py-3">Keranjang kosong</div>';
+      if (cartItemCount) cartItemCount.textContent = '0 items';
+      if (cartCountBadge) cartCountBadge.style.display = 'none';
+      return;
+    }
+
+    // Ambil cart items
+    const { data: cartItems, error } = await supabase
+      .from('cart')
+      .select(`
+        id,
+        quantity,
+        products (id, name, slug, price, discount, image_url)
+      `)
+      .eq('user_id', user.id)
+      .limit(5);
+
+    if (error || !cartItems || cartItems.length === 0) {
+      if (cartItemsList) cartItemsList.innerHTML = '<div class="text-center text-muted py-3">Keranjang kosong</div>';
+      if (cartItemCount) cartItemCount.textContent = '0 items';
+      if (cartCountBadge) cartCountBadge.style.display = 'none';
+      return;
+    }
+
+    // Hitung subtotal
+    let subtotal = 0;
+    let itemsHtml = '';
+
+    cartItems.forEach(item => {
+      const price = item.products.price;
+      const discount = item.products.discount || 0;
+      const discountedPrice = price * (1 - discount / 100);
+      const itemTotal = discountedPrice * item.quantity;
+      subtotal += itemTotal;
+
+      itemsHtml += `
+        <div class="cart-item">
+          <div class="cart-item-img">
+            <img src="${item.products.image_url || '/assets/store/img/product/product-placeholder.webp'}" alt="${item.products.name}" class="img-fluid">
+          </div>
+          <div class="cart-item-info">
+            <h6>${item.products.name}</h6>
+            <div class="cart-item-meta">
+              <span class="cart-item-price">Rp ${discountedPrice.toLocaleString('id-ID')}</span>
+              <span class="cart-item-qty">Qty: ${item.quantity}</span>
+            </div>
+          </div>
+          <button class="cart-item-remove remove-cart-item" data-cart-id="${item.id}" aria-label="Remove item">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      `;
+    });
+
+    if (cartItemsList) cartItemsList.innerHTML = itemsHtml;
+    if (cartItemCount) cartItemCount.textContent = cartItems.length + ' items';
+    if (cartCountBadge) {
+      cartCountBadge.textContent = String(cartItems.length);
+      cartCountBadge.style.display = 'inline';
+    }
+    if (cartSubtotal) cartSubtotal.textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
+
+    // Event listener untuk remove item di dropdown
+    document.querySelectorAll('.remove-cart-item').forEach(btn => {
+      btn.addEventListener('click', async function() {
+        const cartId = this.dataset.cartId;
+        const { error } = await supabase
+          .from('cart')
+          .delete()
+          .eq('id', cartId);
+        
+        if (!error) {
+          loadCartItems();
+          document.dispatchEvent(new Event('cartUpdated'));
+        }
+      });
+    });
+  }
+
+  // ============= FUNGSI UPDATE CART COUNT =============
+  async function updateCartCount() {
+    const { data: { user } } = await supabase.auth.getUser();
+    const cartCountBadge = document.getElementById('cartCountBadge');
+    const cartItemCount = document.getElementById('cartItemCount');
+    
     if (user) {
       const { count } = await supabase
         .from('cart')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
       
-      const cartCount = document.getElementById('cartCount');
-      if (cartCount && count && count > 0) {
-        cartCount.textContent = String(count);
-        cartCount.style.display = 'inline';
+      const total = count || 0;
+      
+      if (cartCountBadge) {
+        if (total > 0) {
+          cartCountBadge.textContent = String(total);
+          cartCountBadge.style.display = 'inline';
+        } else {
+          cartCountBadge.style.display = 'none';
+        }
       }
+      
+      if (cartItemCount) {
+        cartItemCount.textContent = total + ' items';
+      }
+    } else {
+      if (cartCountBadge) cartCountBadge.style.display = 'none';
+      if (cartItemCount) cartItemCount.textContent = '0 items';
     }
   }
 
-  // Logout handler
+  // ============= LOGOUT HANDLER =============
   document.getElementById('logoutBtnHeader')?.addEventListener('click', async () => {
     try {
       await supabase.auth.signOut();
@@ -242,6 +366,14 @@ if (user) {
     }
   });
 
+  // ============= JALANKAN =============
   loadProductDropdown();
-  loadCartCount();
+  loadCartItems();
+  updateCartCount();
+
+  // ============= DENGARKAN EVENT CART UPDATED =============
+  document.addEventListener('cartUpdated', function() {
+    loadCartItems();
+    updateCartCount();
+  });
 </script>

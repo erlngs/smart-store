@@ -1,0 +1,367 @@
+---
+// @ts-nocheck
+// src/pages/admin/orders.astro
+export const prerender = false;
+
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { supabase } from "../../lib/supabase/client";
+
+// Ambil semua order
+const { data: orders, error } = await supabase
+  .from('orders')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+// Ambil profile untuk setiap order
+let ordersWithProfile = [];
+if (orders && orders.length > 0) {
+  for (const order of orders) {
+    // Ambil profile user (termasuk phone)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, phone')
+      .eq('id', order.user_id)
+      .single();
+    
+    // Ambil order items
+    const { data: items } = await supabase
+      .from('order_items')
+      .select(`
+        id,
+        quantity,
+        price,
+        discount_applied,
+        product_id
+      `)
+      .eq('order_id', order.id);
+    
+    // Ambil nama produk untuk setiap item
+    let itemsWithProduct = [];
+    if (items && items.length > 0) {
+      for (const item of items) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('name, image_url')
+          .eq('id', item.product_id)
+          .single();
+        itemsWithProduct.push({
+          ...item,
+          products: product
+        });
+      }
+    }
+    
+    ordersWithProfile.push({
+      ...order,
+      profiles: profile || { full_name: 'Tidak Diketahui', phone: '-' },
+      order_items: itemsWithProduct
+    });
+  }
+}
+---
+
+<AdminLayout title="Orders - SmartStore Admin">
+
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Manajemen Pesanan</h1>
+    <div>
+      <span class="badge bg-primary me-2">{ordersWithProfile?.length || 0} Total Pesanan</span>
+    </div>
+  </div>
+
+  <!-- Filter Status -->
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <select class="form-select" id="filterStatus">
+        <option value="all">Semua Pesanan</option>
+        <option value="pending">Menunggu</option>
+        <option value="paid">Dibayar</option>
+        <option value="shipped">Dikirim</option>
+        <option value="delivered">Selesai</option>
+        <option value="cancelled">Dibatalkan</option>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <input type="text" class="form-control" id="searchOrder" placeholder="Cari berdasarkan ID pesanan atau pelanggan...">
+    </div>
+  </div>
+
+  <!-- Orders List -->
+  <div class="row">
+    {ordersWithProfile && ordersWithProfile.length > 0 ? (
+      ordersWithProfile.map((order) => (
+        <div class="col-12 mb-4 order-card" data-status={order.status} data-search={order.id + ' ' + (order.profiles?.full_name || '')}>
+          <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="m-0 font-weight-bold text-primary">
+                  <i class="bi bi-receipt me-2"></i>Pesanan #{order.id.slice(0, 8)}
+                </h6>
+                <small class="text-muted">{new Date(order.created_at).toLocaleString('id-ID')}</small>
+              </div>
+              <div>
+                <span class={`badge bg-${
+                  order.status === 'delivered' ? 'success' :
+                  order.status === 'cancelled' ? 'danger' :
+                  order.status === 'paid' ? 'info' :
+                  order.status === 'shipped' ? 'primary' : 'warning'
+                }`}>
+                  {order.status === 'pending' ? 'Menunggu' :
+                   order.status === 'paid' ? 'Dibayar' :
+                   order.status === 'shipped' ? 'Dikirim' :
+                   order.status === 'delivered' ? 'Selesai' :
+                   order.status === 'cancelled' ? 'Dibatalkan' : order.status}
+                </span>
+                <span class="badge bg-secondary ms-2">
+                  {order.payment_method === 'cod' ? 'COD' :
+                   order.payment_method === 'transfer' ? 'Transfer' :
+                   order.payment_method === 'qris' ? 'QRIS' : order.payment_method || 'N/A'}
+                </span>
+                {order.proof_url && (
+                  <button class="btn btn-sm btn-outline-info ms-2 view-proof-btn" data-url={order.proof_url}>
+                    <i class="bi bi-image me-1"></i>Bukti
+                  </button>
+                )}
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <!-- Customer Info -->
+                <div class="col-md-4">
+                  <div class="customer-info">
+                    <h6><i class="bi bi-person me-2"></i>Pelanggan</h6>
+                    <p class="fw-bold mb-1">{order.profiles?.full_name || 'Tidak Diketahui'}</p>
+                    <p class="text-muted small mb-1">
+                      <i class="bi bi-telephone me-1"></i>{order.profiles?.phone || order.notes?.match(/Phone: ([^,]+)/)?.[1] || '-'}
+                    </p>
+                    <p class="text-muted small">
+                      <i class="bi bi-geo-alt me-1"></i>{order.city || '-'}
+                    </p>
+                    <p class="text-muted small">
+                      <i class="bi bi-currency-dollar me-1"></i>Total: Rp {order.grand_total?.toLocaleString('id-ID') || 0}
+                    </p>
+                    <p class="text-muted small">
+                      <i class="bi bi-box me-1"></i>{order.order_items?.length || 0} item
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Order Items -->
+                <div class="col-md-5">
+                  <h6><i class="bi bi-box-seam me-2"></i>Item</h6>
+                  {order.order_items && order.order_items.length > 0 ? (
+                    order.order_items.slice(0, 3).map((item) => (
+                      <div class="d-flex align-items-center mb-2">
+                        <img 
+                          src={item.products?.image_url || '/assets/store/img/product/product-placeholder.webp'} 
+                          alt={item.products?.name || 'Produk'} 
+                          style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; margin-right: 10px;"
+                        />
+                        <div>
+                          <div class="small fw-bold">{item.products?.name || 'Produk'}</div>
+                          <div class="small text-muted">
+                            <span className="ms-2">x{item.quantity}</span>
+                            <span className="ms-2">Rp {item.price?.toLocaleString('id-ID') || 0}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <span class="text-muted small">Tidak ada item</span>
+                  )}
+                  {order.order_items && order.order_items.length > 3 && (
+                    <span class="text-muted small">+{order.order_items.length - 3} item lainnya</span>
+                  )}
+                </div>
+
+                <!-- Actions -->
+                <div class="col-md-3">
+                  <h6><i class="bi bi-gear me-2"></i>Aksi</h6>
+                  <div class="d-flex flex-column gap-2">
+                    <select class="form-select form-select-sm status-select" data-order-id={order.id}>
+                      <option value="pending" selected={order.status === 'pending'}>Menunggu</option>
+                      <option value="paid" selected={order.status === 'paid'}>Dibayar</option>
+                      <option value="shipped" selected={order.status === 'shipped'}>Dikirim</option>
+                      <option value="delivered" selected={order.status === 'delivered'}>Selesai</option>
+                      <option value="cancelled" selected={order.status === 'cancelled'}>Dibatalkan</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Shipping Address -->
+              {order.shipping_address && (
+                <div class="mt-2 pt-2 border-top">
+                  <small class="text-muted">
+                    <i class="bi bi-geo-alt me-1"></i>
+                    {order.shipping_address}
+                  </small>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ))
+    ) : (
+      <div class="col-12 text-center py-5">
+        <i class="bi bi-inbox" style="font-size: 48px; color: #dee2e6;"></i>
+        <p class="text-muted mt-3">Belum ada pesanan</p>
+        <small class="text-muted">Coba buat pesanan terlebih dahulu dengan checkout di toko.</small>
+      </div>
+    )}
+  </div>
+
+  <!-- ===== MODAL LIHAT BUKTI TRANSFER ===== -->
+  <div class="modal fade" id="proofModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-image me-2"></i>Bukti Transfer</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <!-- Loading -->
+          <div id="proofLoading" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Memuat gambar...</p>
+          </div>
+          
+          <!-- Image -->
+          <img id="proofImage" src="" alt="Bukti Transfer" style="max-width: 100%; max-height: 500px; border-radius: 8px; display: none;">
+          
+          <!-- Error -->
+          <div id="proofError" style="display: none;">
+            <i class="bi bi-exclamation-triangle" style="font-size: 48px; color: #f59e0b;"></i>
+            <p class="mt-2">Gagal memuat gambar.</p>
+            <p class="text-muted small">Pastikan bucket storage bersifat public.</p>
+            <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadProofImage()">
+              <i class="bi bi-arrow-clockwise me-1"></i>Coba Lagi
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+          <a id="proofDownloadLink" href="#" target="_blank" class="btn btn-primary">
+            <i class="bi bi-download me-1"></i>Download
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    //@ts-nocheck
+    import { supabase } from "@/lib/supabase/client";
+
+    // ===== FUNGSI VIEW BUKTI TRANSFER =====
+    window.viewProof = function(url) {
+      console.log('📸 Opening proof URL:', url);
+      
+      const modal = new bootstrap.Modal(document.getElementById('proofModal'));
+      const image = document.getElementById('proofImage');
+      const loading = document.getElementById('proofLoading');
+      const error = document.getElementById('proofError');
+      const downloadLink = document.getElementById('proofDownloadLink');
+
+      // Reset state
+      image.style.display = 'none';
+      loading.style.display = 'block';
+      error.style.display = 'none';
+      downloadLink.href = url;
+
+      // Coba load gambar
+      const img = new Image();
+      
+      img.onload = function() {
+        console.log('✅ Image loaded successfully');
+        image.src = url;
+        image.style.display = 'block';
+        loading.style.display = 'none';
+        error.style.display = 'none';
+      };
+      
+      img.onerror = function() {
+        console.error('❌ Failed to load image:', url);
+        loading.style.display = 'none';
+        error.style.display = 'block';
+      };
+      
+      img.src = url;
+
+      modal.show();
+    };
+
+    // ===== EVENT LISTENER UNTUK TOMBOL BUKTI =====
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.view-proof-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          const url = this.dataset.url;
+          if (url) {
+            window.viewProof(url);
+          }
+        });
+      });
+    });
+
+    // ===== FUNGSI RETRY LOAD =====
+    window.loadProofImage = function() {
+      const image = document.getElementById('proofImage');
+      const url = image.src;
+      if (url) {
+        window.viewProof(url);
+      }
+    };
+
+    // ===== FILTER STATUS =====
+    document.getElementById('filterStatus')?.addEventListener('change', function() {
+      const status = this.value;
+      const cards = document.querySelectorAll('.order-card');
+      cards.forEach(function(card) {
+        if (status === 'all' || card.dataset.status === status) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+
+    // ===== SEARCH =====
+    document.getElementById('searchOrder')?.addEventListener('keyup', function() {
+      const query = this.value.toLowerCase();
+      const cards = document.querySelectorAll('.order-card');
+      cards.forEach(function(card) {
+        const searchData = card.dataset.search || '';
+        if (searchData.toLowerCase().includes(query)) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+
+    // ===== UPDATE STATUS =====
+    document.querySelectorAll('.status-select').forEach(function(select) {
+      select.addEventListener('change', async function() {
+        const orderId = this.dataset.orderId;
+        const newStatus = this.value;
+
+        if (confirm('Ubah status pesanan menjadi ' + newStatus + '?')) {
+          const { error } = await supabase
+            .from('orders')
+            .update({ status: newStatus })
+            .eq('id', orderId);
+
+          if (error) {
+            alert('Gagal mengupdate status: ' + error.message);
+          } else {
+            alert('Status berhasil diupdate!');
+            window.location.reload();
+          }
+        }
+      });
+    });
+  </script>
+</AdminLayout>

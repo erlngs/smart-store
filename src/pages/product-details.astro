@@ -2,11 +2,7 @@
 // @ts-nocheck
 export const prerender = false;
 import BaseLayout from "../layouts/BaseLayout.astro";
-
-// GANTI baris ini:
-// import { supabase } from "../lib/supabase";
-// JADI:
-const { supabase } = Astro.locals;
+import { supabase } from "../lib/supabase/client";
 
 // Ambil slug dari URL
 const slug = Astro.url.searchParams.get('slug');
@@ -91,17 +87,17 @@ function renderStars(rating) {
               <div class="thumb-item thumbnail-item active" data-image={product.image_url || '/assets/store/img/product/product-placeholder.webp'}>
                 <img src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} alt={product.name} class="img-fluid">
               </div>
-              <div class="thumb-item thumbnail-item" data-image="/assets/store/img/product/product-details-4.webp">
-                <img src="/assets/store/img/product/product-details-4.webp" alt="Angle 2" class="img-fluid">
+              <div class="thumb-item thumbnail-item active" data-image={product.image_url || '/assets/store/img/product/product-placeholder.webp'}>
+                <img src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} alt={product.name} class="img-fluid">
               </div>
-              <div class="thumb-item thumbnail-item" data-image="/assets/store/img/product/product-details-5.webp">
-                <img src="/assets/store/img/product/product-details-5.webp" alt="Angle 3" class="img-fluid">
+              <div class="thumb-item thumbnail-item active" data-image={product.image_url || '/assets/store/img/product/product-placeholder.webp'}>
+                <img src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} alt={product.name} class="img-fluid">
               </div>
-              <div class="thumb-item thumbnail-item" data-image="/assets/store/img/product/product-details-6.webp">
-                <img src="/assets/store/img/product/product-details-6.webp" alt="Angle 4" class="img-fluid">
+              <div class="thumb-item thumbnail-item active" data-image={product.image_url || '/assets/store/img/product/product-placeholder.webp'}>
+                <img src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} alt={product.name} class="img-fluid">
               </div>
-              <div class="thumb-item thumbnail-item" data-image="/assets/store/img/product/product-details-7.webp">
-                <img src="/assets/store/img/product/product-details-7.webp" alt="Angle 5" class="img-fluid">
+              <div class="thumb-item thumbnail-item active" data-image={product.image_url || '/assets/store/img/product/product-placeholder.webp'}>
+                <img src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} alt={product.name} class="img-fluid">
               </div>
             </div>
 
@@ -402,10 +398,11 @@ function renderStars(rating) {
   </section>
 
   <script>
+    //@ts-nocheck
     import { supabase } from "@/lib/supabase/client";
 
     // Quantity selector
-    const qtyInput = document.getElementById('qtyInput') as HTMLInputElement | null;
+    const qtyInput = document.getElementById('qtyInput');
     const decreaseBtn = document.querySelector('.decrease');
     const increaseBtn = document.querySelector('.increase');
 
@@ -424,13 +421,12 @@ function renderStars(rating) {
       });
     }
 
-    // Add to Cart
+    // ============= ADD TO CART =============
     const addToCartBtn = document.getElementById('addToCartBtn');
     if (addToCartBtn) {
-      addToCartBtn.addEventListener('click', async (e) => {
-        const target = e.currentTarget as HTMLElement;
-        const productId = target.dataset.productId;
-        const quantity = parseInt(qtyInput?.value || '1') || 1;
+      addToCartBtn.addEventListener('click', async function() {
+        const productId = this.dataset.productId;
+        const quantity = parseInt(qtyInput?.value) || 1;
 
         const { data: { session } } = await supabase.auth.getSession();
 
@@ -439,22 +435,51 @@ function renderStars(rating) {
           return;
         }
 
-        const { error } = await supabase
-          .from('cart')
-          .insert({
-            user_id: session.user.id,
-            product_id: productId as string,
-            quantity: quantity
-          });
+        try {
+          // Cek apakah produk sudah ada di cart
+          const { data: existing } = await supabase
+            .from('cart')
+            .select('id, quantity')
+            .eq('user_id', session.user.id)
+            .eq('product_id', productId)
+            .maybeSingle();
 
-        if (error) {
-          if (error.code === '23505') {
-            alert('Produk sudah ada di keranjang!');
+          if (existing) {
+            // Update quantity
+            const newQuantity = existing.quantity + quantity;
+            const { error } = await supabase
+              .from('cart')
+              .update({ quantity: newQuantity })
+              .eq('id', existing.id);
+
+            if (error) {
+              alert('Gagal menambahkan ke keranjang');
+            } else {
+              alert('Produk ditambahkan ke keranjang!');
+              window.location.reload();
+            }
           } else {
-            alert('Gagal menambahkan ke keranjang');
+            // Insert baru
+            const { error } = await supabase
+              .from('cart')
+              .insert({
+                user_id: session.user.id,
+                product_id: productId,
+                quantity: quantity
+              });
+
+            if (error) {
+              alert('Gagal menambahkan ke keranjang');
+            } else {
+              alert('Produk ditambahkan ke keranjang!');
+
+              document.dispatchEvent(new Event('cartUpdated'));
+              window.location.reload();
+            }
           }
-        } else {
-          alert('Produk ditambahkan ke keranjang!');
+        } catch (error) {
+          console.error('Add to cart error:', error);
+          alert('Terjadi kesalahan. Silakan coba lagi.');
         }
       });
     }

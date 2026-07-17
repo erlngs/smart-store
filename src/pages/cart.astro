@@ -9,7 +9,6 @@ let cartItems = [];
 let subtotal = 0;
 let totalItems = 0;
 let shippingCost = 0;
-let tax = 0;
 let grandTotal = 0;
 
 if (user) {
@@ -48,11 +47,8 @@ if (user) {
   // Shipping cost (flat rate 20.000)
   shippingCost = 20000;
   
-  // Tax (11% dari subtotal)
-  tax = subtotal * 0.11;
-  
-  // Grand total
-  grandTotal = subtotal + shippingCost + tax;
+  // Grand total (tanpa tax)
+  grandTotal = subtotal + shippingCost;
 }
 ---
 
@@ -190,10 +186,7 @@ if (user) {
                     </div>
                   </div>
 
-                  <div class="cost-row">
-                    <span class="cost-label">Tax (11%)</span>
-                    <span class="cost-amount" id="taxDisplay">Rp {tax.toLocaleString('id-ID')}</span>
-                  </div>
+                  <!-- TAX DIHAPUS -->
                 </div>
 
                 <div class="grand-total">
@@ -237,32 +230,32 @@ if (user) {
   </section>
 
   <script>
+  //@ts-nocheck
     import { supabase } from "@/lib/supabase/client";
 
     // Update quantity
-    document.querySelectorAll<HTMLButtonElement>('.quantity-btn').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        const target = e.currentTarget as HTMLButtonElement;
-        const cartId = target.dataset.cartId;
-        const input = document.querySelector<HTMLInputElement>(`.quantity-input[data-cart-id="${cartId}"]`);
+    document.querySelectorAll('.quantity-btn').forEach((btn) => {
+      btn.addEventListener('click', async function() {
+        const cartId = this.dataset.cartId;
+        const input = document.querySelector(`.quantity-input[data-cart-id="${cartId}"]`);
         if (!input) return;
-
+        
         let val = parseInt(input.value) || 1;
-        const max = parseInt(input.getAttribute('max') || '99') || 99;
-
-        if (target.classList.contains('decrease')) {
+        const max = parseInt(input.getAttribute('max')) || 99;
+        
+        if (this.classList.contains('decrease')) {
           if (val > 1) val--;
-        } else if (target.classList.contains('increase')) {
+        } else if (this.classList.contains('increase')) {
           if (val < max) val++;
         }
-
-        input.value = String(val);
-
+        
+        input.value = val;
+        
         const { error } = await supabase
           .from('cart')
           .update({ quantity: val })
-          .eq('id', cartId as string);
-
+          .eq('id', cartId);
+        
         if (!error) {
           window.location.reload();
         }
@@ -270,22 +263,21 @@ if (user) {
     });
 
     // Manual input quantity
-    document.querySelectorAll<HTMLInputElement>('.quantity-input').forEach((input) => {
-      input.addEventListener('change', async (e) => {
-        const target = e.currentTarget as HTMLInputElement;
-        const cartId = target.dataset.cartId;
-        let val = parseInt(target.value) || 1;
-        const max = parseInt(target.getAttribute('max') || '99') || 99;
-
+    document.querySelectorAll('.quantity-input').forEach((input) => {
+      input.addEventListener('change', async function() {
+        const cartId = this.dataset.cartId;
+        let val = parseInt(this.value) || 1;
+        const max = parseInt(this.getAttribute('max')) || 99;
+        
         if (val < 1) val = 1;
         if (val > max) val = max;
-        target.value = String(val);
-
+        this.value = val;
+        
         const { error } = await supabase
           .from('cart')
           .update({ quantity: val })
-          .eq('id', cartId as string);
-
+          .eq('id', cartId);
+        
         if (!error) {
           window.location.reload();
         }
@@ -293,18 +285,19 @@ if (user) {
     });
 
     // Remove item
-    document.querySelectorAll<HTMLButtonElement>('.remove-item').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        const target = e.currentTarget as HTMLButtonElement;
-        const cartId = target.dataset.cartId;
-
+    document.querySelectorAll('.remove-item').forEach((btn) => {
+      btn.addEventListener('click', async function() {
+        const cartId = this.dataset.cartId;
+        
         if (confirm('Hapus produk dari keranjang?')) {
           const { error } = await supabase
             .from('cart')
             .delete()
-            .eq('id', cartId as string);
-
+            .eq('id', cartId);
+          
           if (!error) {
+
+            document.dispatchEvent(new Event('cartUpdated'));
             window.location.reload();
           }
         }
@@ -312,15 +305,15 @@ if (user) {
     });
 
     // Empty cart
-    document.getElementById('emptyCartBtn')?.addEventListener('click', async () => {
+    document.getElementById('emptyCartBtn')?.addEventListener('click', async function() {
       if (confirm('Kosongkan semua keranjang?')) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
           const { error } = await supabase
             .from('cart')
             .delete()
-            .eq('user_id', user.id);
-
+            .eq('user_id', session.user.id);
+          
           if (!error) {
             window.location.reload();
           }
@@ -329,21 +322,17 @@ if (user) {
     });
 
     // Update shipping cost
-    document.querySelectorAll<HTMLInputElement>('input[name="delivery"]').forEach((radio) => {
-      radio.addEventListener('change', (e) => {
-        const target = e.currentTarget as HTMLInputElement;
-        const shippingCost = parseInt(target.value) || 0;
-
+    document.querySelectorAll('input[name="delivery"]').forEach((radio) => {
+      radio.addEventListener('change', function() {
+        const shippingCost = parseInt(this.value) || 0;
         const subtotalEl = document.getElementById('subtotalDisplay');
-        const taxEl = document.getElementById('taxDisplay');
         const grandTotalEl = document.getElementById('grandTotalDisplay');
-        if (!subtotalEl || !taxEl || !grandTotalEl) return;
-
-        const subtotal = parseInt((subtotalEl.textContent || '').replace(/[^0-9]/g, '')) || 0;
-        const tax = Math.round(subtotal * 0.11);
-        const grandTotal = subtotal + shippingCost + tax;
-
-        taxEl.textContent = 'Rp ' + tax.toLocaleString('id-ID');
+        
+        if (!subtotalEl || !grandTotalEl) return;
+        
+        const subtotal = parseInt(subtotalEl.textContent.replace(/[^0-9]/g, '')) || 0;
+        const grandTotal = subtotal + shippingCost;
+        
         grandTotalEl.textContent = 'Rp ' + grandTotal.toLocaleString('id-ID');
       });
     });
