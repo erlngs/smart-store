@@ -63,21 +63,23 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         return;
       }
 
-      // Ambil cart items
+      // Ambil cart items (termasuk variant)
       const { data: cartItems, error } = await supabase
         .from('cart')
         .select(`
           id,
           quantity,
           product_id,
+          color_variant_id,
+          size_variant_id,
           products (
-            id,
-            name,
-            slug,
-            price,
-            discount,
-            image_url,
-            stock
+            id, name, slug, price, discount, image_url, stock
+          ),
+          color_variant:product_variants!cart_color_variant_id_fkey (
+            id, name, value, stock, price_extra
+          ),
+          size_variant:product_variants!cart_size_variant_id_fkey (
+            id, name, value, stock, price_extra
           )
         `)
         .eq('user_id', session.user.id);
@@ -100,16 +102,17 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         return;
       }
 
-      // Hitung total
+      // Hitung total (termasuk price_extra varian)
       let subtotal = 0;
       let totalItems = 0;
       const shippingCost = 20000;
 
       cartItems.forEach((item) => {
-        const price = item.products.price;
+        const basePrice = item.products.price;
         const discount = item.products.discount || 0;
-        const discountedPrice = price * (1 - discount / 100);
-        subtotal += discountedPrice * item.quantity;
+        const extraPrice = (item.color_variant?.price_extra || 0) + (item.size_variant?.price_extra || 0);
+        const finalPrice = (basePrice + extraPrice) * (1 - discount / 100);
+        subtotal += finalPrice * item.quantity;
         totalItems += item.quantity;
       });
 
@@ -124,10 +127,14 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
       // Render HTML
       const summaryItems = cartItems.map((item) => {
-        const price = item.products.price;
+        const basePrice = item.products.price;
         const discount = item.products.discount || 0;
-        const discountedPrice = price * (1 - discount / 100);
-        const itemTotal = discountedPrice * item.quantity;
+        const extraPrice = (item.color_variant?.price_extra || 0) + (item.size_variant?.price_extra || 0);
+        const finalPrice = (basePrice + extraPrice) * (1 - discount / 100);
+        const itemTotal = finalPrice * item.quantity;
+        const variantParts = [];
+        if (item.color_variant) variantParts.push(`Color: ${item.color_variant.value}`);
+        if (item.size_variant) variantParts.push(`Size: ${item.size_variant.value}`);
         
         return `
           <div class="summary-item">
@@ -137,7 +144,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             </div>
             <div class="item-info">
               <h5>${item.products.name}</h5>
-              <span class="item-meta">Rp ${discountedPrice.toLocaleString('id-ID')} x ${item.quantity}</span>
+              <span class="item-meta">
+                ${variantParts.join(', ')}
+                Rp ${finalPrice.toLocaleString('id-ID')} x ${item.quantity}
+              </span>
             </div>
             <div class="item-cost">Rp ${itemTotal.toLocaleString('id-ID')}</div>
           </div>
@@ -281,7 +291,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                       </label>
                     </div>
 
-                    <!-- ===== UPLOAD BUKTI TRANSFER (HANYA UNTUK BANK TRANSFER) ===== -->
+                    <!-- Upload Bukti Transfer (HANYA UNTUK BANK TRANSFER) -->
                     <div id="uploadProofContainer" style="display: none; margin-top: 15px; padding: 15px; border: 2px dashed #dee2e6; border-radius: 8px;">
                       <h6><i class="bi bi-upload me-2"></i>Upload Bukti Transfer</h6>
                       <p class="text-muted small">Silakan upload bukti transfer setelah melakukan pembayaran.</p>
@@ -290,7 +300,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                         <input type="file" class="form-control" id="proofFile" accept=".jpg,.jpeg,.png,.pdf">
                         <small class="text-muted">Maksimal 5MB</small>
                       </div>
-                      <div id="uploadStatus" class="alert alert-info d-none"></div>
                     </div>
                   </div>
                 </div>
@@ -326,7 +335,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       loadingEl.style.display = 'none';
       contentEl.style.display = 'block';
 
-      // ============= TOGGLE UPLOAD PROOF =============
+      // Toggle Upload Proof
       document.querySelectorAll('input[name="payment-method"]').forEach((radio) => {
         radio.addEventListener('change', function() {
           const uploadContainer = document.getElementById('uploadProofContainer');
@@ -375,7 +384,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           return;
         }
 
-        // ===== VALIDASI UPLOAD BUKTI UNTUK TRANSFER =====
         if (paymentMethod === 'transfer') {
           const proofFile = document.getElementById('proofFile');
           if (!proofFile || !proofFile.files || proofFile.files.length === 0) {
@@ -395,127 +403,123 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         }
 
         try {
+          // Ambil cart data dengan variant
           const { data: cartData } = await supabase
             .from('cart')
             .select(`
               quantity,
               product_id,
-              products (price, discount)
+              color_variant_id,
+              size_variant_id,
+              products (price, discount, stock),
+              color_variant:product_variants!cart_color_variant_id_fkey (stock, price_extra),
+              size_variant:product_variants!cart_size_variant_id_fkey (stock, price_extra)
             `)
             .eq('user_id', session.user.id);
 
           let subTotal = 0;
           cartData?.forEach((item) => {
-            const price = item.products.price;
+            const basePrice = item.products.price;
             const discount = item.products.discount || 0;
-            const discountedPrice = price * (1 - discount / 100);
-            subTotal += discountedPrice * item.quantity;
+            const extraPrice = (item.color_variant?.price_extra || 0) + (item.size_variant?.price_extra || 0);
+            const finalPrice = (basePrice + extraPrice) * (1 - discount / 100);
+            subTotal += finalPrice * item.quantity;
           });
 
           const shipCost = 20000;
           const total = subTotal + shipCost;
           const orderNumber = 'ORD-' + Date.now().toString().slice(-8);
 
-          // ===== UPLOAD FILE KE SUPABASE STORAGE =====
-let proofUrl = null;
-if (paymentMethod === 'transfer') {
-  const proofFile = document.getElementById('proofFile');
-  const file = proofFile.files[0];
-  
-  // Validasi file
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-  if (!allowedTypes.includes(file.type)) {
-    if (errorEl) {
-      errorEl.textContent = 'Format file tidak didukung. Gunakan JPG, PNG, atau PDF.';
-      errorEl.classList.remove('d-none');
-    }
-    submitBtn?.removeAttribute('disabled');
-    return;
-  }
+          // Upload bukti
+          let proofUrl = null;
+          if (paymentMethod === 'transfer') {
+            const proofFile = document.getElementById('proofFile');
+            const file = proofFile.files[0];
+            
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+            if (!allowedTypes.includes(file.type)) {
+              if (errorEl) {
+                errorEl.textContent = 'Format file tidak didukung. Gunakan JPG, PNG, atau PDF.';
+                errorEl.classList.remove('d-none');
+              }
+              submitBtn?.removeAttribute('disabled');
+              return;
+            }
 
-  // Validasi ukuran (max 5MB)
-  if (file.size > 5 * 1024 * 1024) {
-    if (errorEl) {
-      errorEl.textContent = 'Ukuran file maksimal 5MB.';
-      errorEl.classList.remove('d-none');
-    }
-    submitBtn?.removeAttribute('disabled');
-    return;
-  }
+            if (file.size > 5 * 1024 * 1024) {
+              if (errorEl) {
+                errorEl.textContent = 'Ukuran file maksimal 5MB.';
+                errorEl.classList.remove('d-none');
+              }
+              submitBtn?.removeAttribute('disabled');
+              return;
+            }
 
-  const fileExt = file.name.split('.').pop();
-  const fileName = `proof_${orderNumber}_${Date.now()}.${fileExt}`;
-  const filePath = `payment-proofs/${fileName}`;
+            const fileExt = file.name.split('.').pop();
+            const fileName = `proof_${orderNumber}_${Date.now()}.${fileExt}`;
+            const filePath = `payment-proofs/${fileName}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from('order-proofs')
-    .upload(filePath, file, {
-      contentType: file.type,
-      cacheControl: '3600',
-      upsert: false
-    });
-
-  if (uploadError) {
-    console.error('Upload error:', uploadError);
-    if (errorEl) {
-      errorEl.textContent = 'Gagal upload bukti transfer. Error: ' + uploadError.message;
-      errorEl.classList.remove('d-none');
-    }
-    submitBtn?.removeAttribute('disabled');
-    return;
-  }
-
-  // Ambil public URL
-  const { data: urlData } = supabase.storage
-    .from('order-proofs')
-    .getPublicUrl(filePath);
-  
-  proofUrl = urlData.publicUrl;
-}
-
-          const { data: order, error: orderError } = await supabase
-            .from('orders')
-            .insert({
-              user_id: session.user.id,
-              order_number: orderNumber,
-              total: subTotal,
-              shipping_cost: shipCost,
-              grand_total: total,
-              status: paymentMethod === 'cod' ? 'pending' : 'paid',
-              payment_method: paymentMethod,
-              payment_status: paymentMethod === 'cod' ? 'unpaid' : 'paid',
-              shipping_address: address + (postal ? ', ' + postal : ''),
-              city: city,
-              proof_url: proofUrl,
-              notes: `Full Name: ${fullName}, Email: ${email}, Phone: ${phone}`
-            })
-            .select()
-            .single();
-
-          if (orderError) throw orderError;
-
-          for (const item of cartData || []) {
-            const price = item.products.price;
-            const discount = item.products.discount || 0;
-            const discountedPrice = price * (1 - discount / 100);
-
-            await supabase
-              .from('order_items')
-              .insert({
-                order_id: order.id,
-                product_id: item.product_id,
-                quantity: item.quantity,
-                price: discountedPrice,
-                discount_applied: discount
+            const { error: uploadError } = await supabase.storage
+              .from('order-proofs')
+              .upload(filePath, file, {
+                contentType: file.type,
+                cacheControl: '3600',
+                upsert: false
               });
+
+            if (uploadError) {
+              console.error('Upload error:', uploadError);
+              if (errorEl) {
+                errorEl.textContent = 'Gagal upload bukti transfer. Error: ' + uploadError.message;
+                errorEl.classList.remove('d-none');
+              }
+              submitBtn?.removeAttribute('disabled');
+              return;
+            }
+
+            const { data: urlData } = supabase.storage
+              .from('order-proofs')
+              .getPublicUrl(filePath);
+            proofUrl = urlData.publicUrl;
           }
 
-          await supabase
-            .from('cart')
-            .delete()
-            .eq('user_id', session.user.id);
+          // BUAT ORDER
+          // Siapkan data items untuk RPC
+          const itemsPayload = (cartData || []).map((item) => {
+            const price = item.products.price;
+            const discount = item.products.discount || 0;
+            const extraPrice = (item.color_variant?.price_extra || 0) + (item.size_variant?.price_extra || 0);
+            const discountedPrice = (price + extraPrice) * (1 - discount / 100);
+            return {
+              product_id: item.product_id,
+              color_variant_id: item.color_variant_id || null,
+              size_variant_id: item.size_variant_id || null,
+              quantity: item.quantity,
+              price: discountedPrice,
+              discount_applied: discount
+            };
+          });
 
-          window.location.href = `/order-confirmation?order=${order.id}`;
+          // Panggil database function (atomic: order + stok + hapus cart)
+          const { data: newOrderId, error: rpcError } = await supabase.rpc('checkout_order', {
+            p_user_id: session.user.id,
+            p_order_number: orderNumber,
+            p_total: subTotal,
+            p_shipping_cost: shipCost,
+            p_grand_total: total,
+            p_payment_method: paymentMethod,
+            p_payment_status: paymentMethod === 'cod' ? 'unpaid' : 'paid',
+            p_status: paymentMethod === 'cod' ? 'pending' : 'paid',
+            p_shipping_address: address + (postal ? ', ' + postal : ''),
+            p_city: city,
+            p_proof_url: proofUrl,
+            p_notes: `Full Name: ${fullName}, Email: ${email}, Phone: ${phone}`,
+            p_items: itemsPayload
+          });
+
+          if (rpcError) throw rpcError;
+
+          window.location.href = `/order-confirmation?order=${newOrderId}`;
 
         } catch (error) {
           console.error('Checkout error:', error);

@@ -1,0 +1,181 @@
+---
+// @ts-nocheck
+// src/pages/admin/users.astro
+export const prerender = false;
+
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { supabase } from "../../lib/supabase/client";
+
+// Ambil semua profile user (langsung include email)
+const { data: users, error } = await supabase
+  .from('profiles')
+  .select('*')
+  .order('created_at', { ascending: false });
+---
+
+<AdminLayout title="Users - SmartStore Admin">
+
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Manajemen User</h1>
+    <div>
+      <span class="badge bg-primary me-2">{users?.length || 0} Total User</span>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <input type="text" class="form-control" id="searchUser" placeholder="Cari berdasarkan nama atau email...">
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="card shadow mb-4">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered" id="usersTable" width="100%" cellspacing="0">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Role</th>
+              <th>Alamat</th>
+              <th>Bergabung</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody">
+            {users && users.length > 0 ? (
+              users.map((user, index) => (
+                <tr class="user-row" data-search={(user.full_name || '') + ' ' + (user.email || '')}>
+                  <td>{index + 1}</td>
+                  <td>
+                    <strong>{user.full_name || 'Tidak ada nama'}</strong>
+                  </td>
+                  <td>{user.email || '-'}</td>
+                  <td>{user.phone || '-'}</td>
+                  <td>
+                    <span class={`badge bg-${user.role === 'admin' ? 'danger' : user.role === 'super_admin' ? 'warning' : 'secondary'}`}>
+                      {user.role === 'admin' ? 'Admin' :
+                       user.role === 'super_admin' ? 'Super Admin' :
+                       'User'}
+                    </span>
+                  </td>
+                  <td>
+                    <small class="text-muted">{user.address ? user.address.slice(0, 30) + (user.address.length > 30 ? '...' : '') : '-'}</small>
+                  </td>
+                  <td>
+                    <small class="text-muted">{new Date(user.created_at).toLocaleDateString('id-ID')}</small>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-primary edit-role-btn" data-user-id={user.id} data-current-role={user.role} data-bs-toggle="modal" data-bs-target="#editRoleModal">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colspan="8" class="text-center py-4">Belum ada user</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL EDIT ROLE ===== -->
+  <div class="modal fade" id="editRoleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-person-gear me-2"></i>Ubah Role User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="editRoleForm">
+          <div class="modal-body">
+            <input type="hidden" id="editUserId">
+            <div class="mb-3">
+              <label class="form-label">Role</label>
+              <select class="form-select" id="editRole">
+                <option value="user">User (Pelanggan)</option>
+                <option value="admin">Admin</option>
+                <option value="super_admin">Super Admin</option>
+              </select>
+            </div>
+            <div id="editRoleError" class="alert alert-danger d-none"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    //@ts-nocheck
+    import { supabase } from "@/lib/supabase/client";
+
+    // Search
+    document.getElementById('searchUser')?.addEventListener('keyup', function() {
+      const query = this.value.toLowerCase();
+      const rows = document.querySelectorAll('.user-row');
+      rows.forEach(function(row) {
+        const searchData = row.dataset.search || '';
+        if (searchData.toLowerCase().includes(query)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+
+    // Edit Role
+    document.querySelectorAll('.edit-role-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        const userId = this.dataset.userId;
+        const currentRole = this.dataset.currentRole;
+        document.getElementById('editUserId').value = userId;
+        document.getElementById('editRole').value = currentRole;
+        document.getElementById('editRoleError').classList.add('d-none');
+      });
+    });
+
+    // Submit Edit Role
+    document.getElementById('editRoleForm')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const errorEl = document.getElementById('editRoleError');
+      errorEl.classList.add('d-none');
+
+      const userId = document.getElementById('editUserId').value;
+      const newRole = document.getElementById('editRole').value;
+
+      if (!userId) {
+        errorEl.textContent = 'User ID tidak ditemukan';
+        errorEl.classList.remove('d-none');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+      if (error) {
+        errorEl.textContent = 'Gagal mengupdate role: ' + error.message;
+        errorEl.classList.remove('d-none');
+        return;
+      }
+
+      alert('Role berhasil diupdate!');
+      window.location.reload();
+    });
+  </script>
+</AdminLayout>

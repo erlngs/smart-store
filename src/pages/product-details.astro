@@ -7,7 +7,6 @@ import { supabase } from "../lib/supabase/client";
 // Ambil slug dari URL
 const slug = Astro.url.searchParams.get('slug');
 
-// Jika tidak ada slug, redirect ke home
 if (!slug) {
   return Astro.redirect('/');
 }
@@ -19,7 +18,6 @@ const { data: product, error } = await supabase
   .eq('slug', slug)
   .single();
 
-// Jika produk tidak ditemukan, redirect ke home
 if (error || !product) {
   return Astro.redirect('/');
 }
@@ -29,6 +27,10 @@ const { data: variants } = await supabase
   .from('product_variants')
   .select('*')
   .eq('product_id', product.id);
+
+// Pisahkan varian berdasarkan nama
+const colorVariants = variants?.filter(v => v.name === 'Color') || [];
+const sizeVariants = variants?.filter(v => v.name === 'Size') || [];
 
 // Ambil review produk
 const { data: reviews } = await supabase
@@ -41,7 +43,6 @@ const { data: reviews } = await supabase
   .order('created_at', { ascending: false })
   .limit(5);
 
-// Hitung rata-rata rating
 let avgRating = 0;
 let totalReviews = 0;
 if (reviews && reviews.length > 0) {
@@ -50,25 +51,17 @@ if (reviews && reviews.length > 0) {
   avgRating = sum / totalReviews;
 }
 
-// Hitung diskon
 const discount = product.discount || 0;
 const discountedPrice = product.price * (1 - discount / 100);
 const savings = product.price - discountedPrice;
 
-// Fungsi untuk render bintang
 function renderStars(rating) {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
   const stars = [];
-  for (let i = 0; i < fullStars; i++) {
-    stars.push('<i class="bi bi-star-fill"></i>');
-  }
-  if (hasHalfStar) {
-    stars.push('<i class="bi bi-star-half"></i>');
-  }
-  while (stars.length < 5) {
-    stars.push('<i class="bi bi-star"></i>');
-  }
+  for (let i = 0; i < fullStars; i++) stars.push('<i class="bi bi-star-fill"></i>');
+  if (hasHalfStar) stars.push('<i class="bi bi-star-half"></i>');
+  while (stars.length < 5) stars.push('<i class="bi bi-star"></i>');
   return stars.join('');
 }
 ---
@@ -103,9 +96,7 @@ function renderStars(rating) {
 
             <div class="gallery-main">
               <div class="main-image-container">
-                {discount > 0 && (
-                  <span class="sale-tag">-{discount}%</span>
-                )}
+                {discount > 0 && <span class="sale-tag">-{discount}%</span>}
                 <img id="main-product-image" src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} data-zoom={product.image_url || '/assets/store/img/product/product-placeholder.webp'} alt={product.name} class="img-fluid drift-zoom">
                 <div class="image-zoom-container"></div>
                 <button class="image-nav-btn prev-image" type="button"><i class="bi bi-chevron-left"></i></button>
@@ -144,33 +135,68 @@ function renderStars(rating) {
               <p>{product.description || 'Deskripsi produk belum tersedia.'}</p>
             </div>
 
-            <div class="availability-row">
+            <!-- ===== COLOR OPTIONS ===== -->
+            {colorVariants.length > 0 && (
+              <div class="color-options">
+                <span class="option-label">Select Color:</span>
+                <div class="swatches" id="colorSwatches">
+                  {colorVariants.map((color, index) => {
+                    const isActive = index === 0;
+                    return (
+                      <button
+                        type="button"
+                        class={`swatch btn ${isActive ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        data-variant-id={color.id}
+                        data-value={color.value}
+                        data-stock={color.stock || 0}
+                        style="margin: 4px; padding: 6px 16px; border-radius: 6px;"
+                        onclick="selectVariant('color', this)"
+                      >
+                        {color.value}
+                      </button>
+                    );
+                  })}
+                </div>
+                <span class="chosen-color" id="chosenColor">{colorVariants[0]?.value || 'No color'}</span>
+              </div>
+            )}
+
+            <!-- ===== SIZE OPTIONS ===== -->
+            {sizeVariants.length > 0 && (
+              <div class="size-options" style="margin-top: 15px;">
+                <span class="option-label">Select Size:</span>
+                <div class="size-buttons" id="sizeButtons">
+                  {sizeVariants.map((size, index) => {
+                    const isActive = index === 0;
+                    return (
+                      <button 
+                        class={`btn ${isActive ? 'btn-primary' : 'btn-outline-secondary'}`}
+                        data-variant-id={size.id}
+                        data-value={size.value}
+                        data-stock={size.stock || 0}
+                        style="margin: 4px; padding: 6px 16px; border-radius: 4px;"
+                        onclick="selectVariant('size', this)"
+                      >
+                        {size.value}
+                      </button>
+                    );
+                  })}
+                </div>
+                <span class="chosen-size" id="chosenSize">{sizeVariants[0]?.value || 'No size'}</span>
+              </div>
+            )}
+
+            <!-- ===== VARIAN STOCK INFO ===== -->
+            <div class="availability-row" id="variantStockInfo">
               {product.stock > 0 ? (
                 <>
                   <span class="in-stock"><i class="bi bi-patch-check-fill"></i> In Stock</span>
-                  <span class="remaining">Only {product.stock} remaining</span>
+                  <span class="remaining" id="stockRemaining">Only {product.stock} remaining</span>
                 </>
               ) : (
                 <span class="out-of-stock" style="color: #dc3545;"><i class="bi bi-x-circle-fill"></i> Out of Stock</span>
               )}
             </div>
-
-            {variants && variants.length > 0 && (
-              <div class="color-options">
-                <span class="option-label">Variants:</span>
-                <div class="swatches">
-                  {variants.map((variant, index) => (
-                    <div 
-                      class={`swatch ${index === 0 ? 'active' : ''}`} 
-                      data-color={variant.value}
-                      style="padding: 4px 12px; border-radius: 4px; background: #4e73df; color: white; font-size: 12px; display: inline-flex; align-items: center; margin: 4px; cursor: default; width: auto; border: none;"
-                    >
-                      <span style="font-size: 10px;">{variant.name}: {variant.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <div class="purchase-controls">
               <div class="qty-group">
@@ -233,7 +259,6 @@ function renderStars(rating) {
                       <div class="desc-main">
                         <h3>About This Product</h3>
                         <p>{product.description || 'Deskripsi produk belum tersedia.'}</p>
-
                         {variants && variants.length > 0 && (
                           <>
                             <h4>Available Variants</h4>
@@ -254,7 +279,6 @@ function renderStars(rating) {
                         )}
                       </div>
                     </div>
-
                     <div class="col-lg-5">
                       <div class="box-contents">
                         <h4><i class="bi bi-box-seam"></i> What's Included</h4>
@@ -280,44 +304,22 @@ function renderStars(rating) {
                         <h4>Product Details</h4>
                         <table class="spec-table">
                           <tbody>
-                            <tr>
-                              <td>Category</td>
-                              <td>{product.category || 'General'}</td>
-                            </tr>
-                            <tr>
-                              <td>Price</td>
-                              <td>Rp {product.price.toLocaleString('id-ID')}</td>
-                            </tr>
-                            <tr>
-                              <td>Stock</td>
-                              <td>{product.stock || 0}</td>
-                            </tr>
-                            <tr>
-                              <td>SKU</td>
-                              <td>{product.id?.slice(0, 8) || 'N/A'}</td>
-                            </tr>
+                            <tr><td>Category</td><td>{product.category || 'General'}</td></tr>
+                            <tr><td>Price</td><td>Rp {product.price.toLocaleString('id-ID')}</td></tr>
+                            <tr><td>Stock</td><td>{product.stock || 0}</td></tr>
+                            <tr><td>SKU</td><td>{product.id?.slice(0, 8) || 'N/A'}</td></tr>
                           </tbody>
                         </table>
                       </div>
                     </div>
-
                     <div class="col-md-6">
                       <div class="spec-group">
                         <h4>Additional Info</h4>
                         <table class="spec-table">
                           <tbody>
-                            <tr>
-                              <td>Status</td>
-                              <td>{product.is_active ? 'Active' : 'Inactive'}</td>
-                            </tr>
-                            <tr>
-                              <td>Discount</td>
-                              <td>{discount > 0 ? `${discount}%` : 'No discount'}</td>
-                            </tr>
-                            <tr>
-                              <td>Created</td>
-                              <td>{new Date(product.created_at).toLocaleDateString('id-ID')}</td>
-                            </tr>
+                            <tr><td>Status</td><td>{product.is_active ? 'Active' : 'Inactive'}</td></tr>
+                            <tr><td>Discount</td><td>{discount > 0 ? `${discount}%` : 'No discount'}</td></tr>
+                            <tr><td>Created</td><td>{new Date(product.created_at).toLocaleDateString('id-ID')}</td></tr>
                           </tbody>
                         </table>
                       </div>
@@ -338,7 +340,6 @@ function renderStars(rating) {
                         <button class="btn write-review-btn">Write a Review</button>
                       </div>
                     </div>
-
                     <div class="col-md-8">
                       <div class="bars-breakdown">
                         {[5, 4, 3, 2, 1].map((star) => {
@@ -357,7 +358,6 @@ function renderStars(rating) {
                       </div>
                     </div>
                   </div>
-
                   <div class="feedback-list">
                     {reviews && reviews.length > 0 ? (
                       reviews.map((review) => (
@@ -397,91 +397,311 @@ function renderStars(rating) {
     </div>
   </section>
 
-  <script>
-    //@ts-nocheck
-    import { supabase } from "@/lib/supabase/client";
+  <!-- ===== MODAL PILIH VARIAN ===== -->
+  <div class="modal fade" id="variantModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-box-seam me-2"></i>Pilih Varian</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3">Silakan pilih varian produk terlebih dahulu:</p>
+          
+          <!-- Pilihan Color -->
+          {colorVariants.length > 0 && (
+            <div class="mb-3">
+              <label class="fw-bold">Warna:</label>
+              <div class="d-flex flex-wrap gap-2 mt-1" id="modalColorOptions">
+                {colorVariants.map((color) => (
+                  <button 
+                    class="btn btn-outline-secondary modal-color-btn" 
+                    data-variant-id={color.id}
+                    data-value={color.value}
+                    style="border: 2px solid {color.value};"
+                  >
+                    {color.value}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <!-- Pilihan Size -->
+          {sizeVariants.length > 0 && (
+            <div class="mb-3">
+              <label class="fw-bold">Ukuran:</label>
+              <div class="d-flex flex-wrap gap-2 mt-1" id="modalSizeOptions">
+                {sizeVariants.map((size) => (
+                  <button 
+                    class="btn btn-outline-secondary modal-size-btn" 
+                    data-variant-id={size.id}
+                    data-value={size.value}
+                  >
+                    {size.value}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div id="variantModalError" class="alert alert-danger d-none mt-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-primary" id="confirmVariantBtn">Tambahkan ke Keranjang</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div 
+    id="productData" 
+    style="display:none;" 
+    data-variants={JSON.stringify(variants || [])}
+    data-color-variants={JSON.stringify(colorVariants)}
+    data-size-variants={JSON.stringify(sizeVariants)}
+  ></div>
+<script>
+  //@ts-nocheck
+  import { supabase } from "@/lib/supabase/client";
 
-    // Quantity selector
+  // ===== DATA DARI SERVER (LANGSUNG DARI ASTRO) =====
+   const productData = document.getElementById('productData');
+  const variants = productData ? JSON.parse(productData.dataset.variants || '[]') : [];
+  const colorVariants = productData ? JSON.parse(productData.dataset.colorVariants || '[]') : [];
+  const sizeVariants = productData ? JSON.parse(productData.dataset.sizeVariants || '[]') : [];
+
+  console.log('📦 Variants:', variants);
+  console.log('🎨 Color Variants:', colorVariants);
+  console.log('📏 Size Variants:', sizeVariants);
+
+  // ===== SELECT VARIANT =====
+  let selectedColorId = null;
+  let selectedSizeId = null;
+  let selectedColorStock = 0;
+  let selectedSizeStock = 0;
+  const productStock = parseInt(document.getElementById('qtyInput')?.getAttribute('max') || 0);
+
+  window.selectVariant = function(type, el) {
+    const variantId = el.dataset.variantId;
+    const stock = parseInt(el.dataset.stock) || 0;
+
+    if (type === 'color') {
+      document.querySelectorAll('#colorSwatches .swatch').forEach(s => {
+        s.className = 'swatch btn btn-outline-secondary';
+        s.style.margin = '4px';
+        s.style.padding = '6px 16px';
+        s.style.borderRadius = '6px';
+      });
+      el.className = 'swatch btn btn-dark';
+      el.style.margin = '4px';
+      el.style.padding = '6px 16px';
+      el.style.borderRadius = '6px';
+      const chosenEl = document.getElementById('chosenColor');
+      if (chosenEl) chosenEl.textContent = el.dataset.value;
+      selectedColorId = variantId;
+      selectedColorStock = stock;
+      updateStockInfo();
+    
+    } else if (type === 'size') {
+      document.querySelectorAll('#sizeButtons .btn').forEach(b => {
+        b.className = 'btn btn-outline-secondary';
+        b.style.margin = '4px';
+        b.style.padding = '6px 16px';
+        b.style.borderRadius = '4px';
+      });
+      el.className = 'btn btn-primary';
+      el.style.margin = '4px';
+      el.style.padding = '6px 16px';
+      el.style.borderRadius = '4px';
+      const chosenEl = document.getElementById('chosenSize');
+      if (chosenEl) chosenEl.textContent = el.dataset.value;
+      selectedSizeId = variantId;
+      selectedSizeStock = stock;
+      updateStockInfo();
+    }
+  };
+
+  function updateStockInfo() {
+    const stockEl = document.getElementById('stockRemaining');
+    let maxStock = productStock;
+    if (selectedColorId && selectedColorStock > 0) maxStock = selectedColorStock;
+    if (selectedSizeId && selectedSizeStock > 0) maxStock = selectedSizeStock;
+    
     const qtyInput = document.getElementById('qtyInput');
-    const decreaseBtn = document.querySelector('.decrease');
-    const increaseBtn = document.querySelector('.increase');
-
-    if (decreaseBtn && qtyInput) {
-      decreaseBtn.addEventListener('click', () => {
-        let val = parseInt(qtyInput.value) || 1;
-        if (val > 1) qtyInput.value = String(val - 1);
-      });
+    if (qtyInput) {
+      qtyInput.max = maxStock;
+      if (parseInt(qtyInput.value) > maxStock) qtyInput.value = maxStock;
     }
 
-    if (increaseBtn && qtyInput) {
-      increaseBtn.addEventListener('click', () => {
-        let val = parseInt(qtyInput.value) || 1;
-        const max = parseInt(qtyInput.getAttribute('max') || '99') || 99;
-        if (val < max) qtyInput.value = String(val + 1);
-      });
+    if (stockEl) {
+      if (maxStock > 0) {
+        stockEl.textContent = 'Only ' + maxStock + ' remaining';
+      } else {
+        stockEl.textContent = 'Out of stock';
+      }
     }
+  }
 
-    // ============= ADD TO CART =============
-    const addToCartBtn = document.getElementById('addToCartBtn');
-    if (addToCartBtn) {
-      addToCartBtn.addEventListener('click', async function() {
+  // ===== QUANTITY SELECTOR =====
+  const qtyInput = document.getElementById('qtyInput');
+  const decreaseBtn = document.querySelector('.decrease');
+  const increaseBtn = document.querySelector('.increase');
+
+  if (decreaseBtn && qtyInput) {
+    decreaseBtn.addEventListener('click', function() {
+      let val = parseInt(qtyInput.value) || 1;
+      if (val > 1) {
+        qtyInput.value = String(val - 1);
+        qtyInput.dispatchEvent(new Event('change'));
+      }
+    });
+  }
+
+  if (increaseBtn && qtyInput) {
+    increaseBtn.addEventListener('click', function() {
+      let val = parseInt(qtyInput.value) || 1;
+      const max = parseInt(qtyInput.getAttribute('max')) || 99;
+      if (val < max) {
+        qtyInput.value = String(val + 1);
+        qtyInput.dispatchEvent(new Event('change'));
+      }
+    });
+  }
+
+  // ===== VARIABEL UNTUK MODAL =====
+  let selectedModalColorId = null;
+  let selectedModalSizeId = null;
+
+  // ===== EVENT UNTUK PILIH WARNA DI MODAL =====
+  document.querySelectorAll('.modal-color-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.modal-color-btn').forEach(b => b.classList.remove('btn-primary', 'active'));
+      this.classList.add('btn-primary', 'active');
+      selectedModalColorId = this.dataset.variantId;
+    });
+  });
+
+  // ===== EVENT UNTUK PILIH UKURAN DI MODAL =====
+  document.querySelectorAll('.modal-size-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.modal-size-btn').forEach(b => b.classList.remove('btn-primary', 'active'));
+      this.classList.add('btn-primary', 'active');
+      selectedModalSizeId = this.dataset.variantId;
+    });
+  });
+
+  // ===== CONFIRM VARIANT =====
+  document.getElementById('confirmVariantBtn')?.addEventListener('click', async function() {
+    const errorEl = document.getElementById('variantModalError');
+    errorEl.classList.add('d-none');
+    
+    if (colorVariants.length > 0 && !selectedModalColorId) {
+      errorEl.textContent = 'Silakan pilih warna terlebih dahulu!';
+      errorEl.classList.remove('d-none');
+      return;
+    }
+    if (sizeVariants.length > 0 && !selectedModalSizeId) {
+      errorEl.textContent = 'Silakan pilih ukuran terlebih dahulu!';
+      errorEl.classList.remove('d-none');
+      return;
+    }
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('variantModal'));
+    modal.hide();
+    
+    const productId = document.getElementById('addToCartBtn').dataset.productId;
+    const qtyInput = document.getElementById('qtyInput');
+    const quantity = parseInt(qtyInput?.value) || 1;
+    
+    await addToCart(productId, selectedModalColorId, selectedModalSizeId, quantity);
+  });
+
+  // ===== FUNCTION ADD TO CART =====
+  async function addToCart(productId, colorVariantId, sizeVariantId, quantity) {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      window.location.href = '/login';
+      return;
+    }
+    
+    try {
+      let query = supabase
+        .from('cart')
+        .select('id, quantity')
+        .eq('user_id', session.user.id)
+        .eq('product_id', productId);
+        
+      query = colorVariantId ? query.eq('color_variant_id', colorVariantId) : query.is('color_variant_id', null);
+      query = sizeVariantId ? query.eq('size_variant_id', sizeVariantId) : query.is('size_variant_id', null);
+      
+      const { data: existing } = await query.maybeSingle();
+      
+      if (existing) {
+        const newQuantity = existing.quantity + quantity;
+        const { error } = await supabase
+          .from('cart')
+          .update({ quantity: newQuantity })
+          .eq('id', existing.id);
+          
+        if (error) {
+          alert('Gagal menambahkan ke keranjang: ' + error.message);
+        } else {
+          alert('Produk ditambahkan ke keranjang!');
+          document.dispatchEvent(new Event('cartUpdated'));
+          window.location.reload();
+        }
+      } else {
+        const insertData = {
+          user_id: session.user.id,
+          product_id: productId,
+          quantity: quantity,
+          color_variant_id: colorVariantId || null,
+          size_variant_id: sizeVariantId || null
+        };
+        
+        const { error } = await supabase
+          .from('cart')
+          .insert(insertData);
+          
+        if (error) {
+          alert('Gagal menambahkan ke keranjang: ' + error.message);
+        } else {
+          alert('Produk ditambahkan ke keranjang!');
+          document.dispatchEvent(new Event('cartUpdated'));
+          window.location.reload();
+        }
+      }
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      alert('Terjadi kesalahan. Silakan coba lagi.');
+    }
+  }
+
+  // ===== ADD TO CART BUTTON =====
+  const addToCartBtn = document.getElementById('addToCartBtn');
+  if (addToCartBtn) {
+    addToCartBtn.addEventListener('click', function() {
+      const hasVariants = variants && variants.length > 0;
+      
+      if (hasVariants) {
+        selectedModalColorId = null;
+        selectedModalSizeId = null;
+        document.querySelectorAll('.modal-color-btn').forEach(b => b.classList.remove('btn-primary', 'active'));
+        document.querySelectorAll('.modal-size-btn').forEach(b => b.classList.remove('btn-primary', 'active'));
+        
+        const modal = new bootstrap.Modal(document.getElementById('variantModal'));
+        modal.show();
+      } else {
         const productId = this.dataset.productId;
+        const qtyInput = document.getElementById('qtyInput');
         const quantity = parseInt(qtyInput?.value) || 1;
+        addToCart(productId, null, null, quantity);
+      }
+    });
+  }
+  
+</script>
 
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (!session) {
-          window.location.href = '/login';
-          return;
-        }
-
-        try {
-          // Cek apakah produk sudah ada di cart
-          const { data: existing } = await supabase
-            .from('cart')
-            .select('id, quantity')
-            .eq('user_id', session.user.id)
-            .eq('product_id', productId)
-            .maybeSingle();
-
-          if (existing) {
-            // Update quantity
-            const newQuantity = existing.quantity + quantity;
-            const { error } = await supabase
-              .from('cart')
-              .update({ quantity: newQuantity })
-              .eq('id', existing.id);
-
-            if (error) {
-              alert('Gagal menambahkan ke keranjang');
-            } else {
-              alert('Produk ditambahkan ke keranjang!');
-              window.location.reload();
-            }
-          } else {
-            // Insert baru
-            const { error } = await supabase
-              .from('cart')
-              .insert({
-                user_id: session.user.id,
-                product_id: productId,
-                quantity: quantity
-              });
-
-            if (error) {
-              alert('Gagal menambahkan ke keranjang');
-            } else {
-              alert('Produk ditambahkan ke keranjang!');
-
-              document.dispatchEvent(new Event('cartUpdated'));
-              window.location.reload();
-            }
-          }
-        } catch (error) {
-          console.error('Add to cart error:', error);
-          alert('Terjadi kesalahan. Silakan coba lagi.');
-        }
-      });
-    }
-  </script>
 </BaseLayout>

@@ -12,13 +12,15 @@ let shippingCost = 0;
 let grandTotal = 0;
 
 if (user) {
-  // Ambil data cart dengan join ke products
+  // Ambil data cart dengan join ke products dan product_variants
   const { data, error } = await supabase
     .from('cart')
     .select(`
       id,
       quantity,
       product_id,
+      color_variant_id,
+      size_variant_id,
       products (
         id,
         name,
@@ -27,6 +29,12 @@ if (user) {
         discount,
         image_url,
         stock
+      ),
+      color_variant:product_variants!cart_color_variant_id_fkey (
+        id, name, value, stock, price_extra
+      ),
+      size_variant:product_variants!cart_size_variant_id_fkey (
+        id, name, value, stock, price_extra
       )
     `)
     .eq('user_id', user.id);
@@ -34,20 +42,18 @@ if (user) {
   if (!error && data) {
     cartItems = data;
     
-    // Hitung subtotal
+    // Hitung subtotal (termasuk price_extra varian)
     cartItems.forEach((item) => {
-      const price = item.products.price;
+      const basePrice = item.products.price;
       const discount = item.products.discount || 0;
-      const discountedPrice = price * (1 - discount / 100);
-      subtotal += discountedPrice * item.quantity;
+      const extraPrice = (item.color_variant?.price_extra || 0) + (item.size_variant?.price_extra || 0);
+      const finalPrice = (basePrice + extraPrice) * (1 - discount / 100);
+      subtotal += finalPrice * item.quantity;
       totalItems += item.quantity;
     });
   }
 
-  // Shipping cost (flat rate 20.000)
   shippingCost = 20000;
-  
-  // Grand total (tanpa tax)
   grandTotal = subtotal + shippingCost;
 }
 ---
@@ -57,7 +63,6 @@ if (user) {
   <!-- Cart Section -->
   <section id="cart" class="cart section">
 
-    <!-- Section Title -->
     <div class="container section-title" data-aos="fade-up">
       <h2>Cart</h2>
       <p>Keranjang belanja Anda di SmartStore</p>
@@ -83,10 +88,11 @@ if (user) {
 
             <div class="items-list" id="cartItemsList">
               {cartItems.map((item) => {
-                const price = item.products.price;
+                const basePrice = item.products.price;
                 const discount = item.products.discount || 0;
-                const discountedPrice = price * (1 - discount / 100);
-                const itemTotal = discountedPrice * item.quantity;
+                const extraPrice = (item.color_variant?.price_extra || 0) + (item.size_variant?.price_extra || 0);
+                const finalPrice = (basePrice + extraPrice) * (1 - discount / 100);
+                const itemTotal = finalPrice * item.quantity;
                 
                 return (
                   <div class="cart-item" data-cart-id={item.id} data-aos="zoom-in">
@@ -105,25 +111,40 @@ if (user) {
                             <a href={`/product-details?slug=${item.products.slug}`}>{item.products.name}</a>
                           </h6>
                           <div class="item-attributes">
+                            {item.color_variant && (
+                              <span class="attribute-badge" style="background: #4e73df; color: white;">
+                                Color: {item.color_variant.value}
+                              </span>
+                            )}
+                            {item.size_variant && (
+                              <span class="attribute-badge" style="background: #6f42c1; color: white;">
+                                Size: {item.size_variant.value}
+                              </span>
+                            )}
                             {discount > 0 && (
                               <span class="attribute-badge" style="background: #dc3545; color: white;">Save {discount}%</span>
                             )}
-                            <span class="attribute-badge">Stock: {item.products.stock || 0}</span>
+                            <span class="attribute-badge">
+                              Stock: {Math.min(item.color_variant?.stock ?? Infinity, item.size_variant?.stock ?? Infinity, item.products.stock ?? Infinity) || 0}
+                            </span>
                           </div>
                           <div class="item-bottom">
                             <div class="item-pricing">
                               {discount > 0 ? (
                                 <>
-                                  <span class="unit-price">Rp {discountedPrice.toLocaleString('id-ID')}</span>
-                                  <span class="was-price">Rp {price.toLocaleString('id-ID')}</span>
+                                  <span class="unit-price">Rp {finalPrice.toLocaleString('id-ID')}</span>
+                                  <span class="was-price">Rp {(basePrice + extraPrice).toLocaleString('id-ID')}</span>
                                 </>
                               ) : (
-                                <span class="unit-price">Rp {price.toLocaleString('id-ID')}</span>
+                                <span class="unit-price">Rp {finalPrice.toLocaleString('id-ID')}</span>
+                              )}
+                              {extraPrice > 0 && (
+                                <span class="text-muted small">+Rp {extraPrice.toLocaleString('id-ID')}</span>
                               )}
                             </div>
                             <div class="quantity-selector">
                               <button class="quantity-btn decrease" data-cart-id={item.id}><i class="bi bi-dash"></i></button>
-                              <input type="number" class="quantity-input" value={item.quantity} min="1" max={item.products.stock || 10} data-cart-id={item.id}>
+                              <input type="number" class="quantity-input" value={item.quantity} min="1" max={Math.min(item.color_variant?.stock ?? 999, item.size_variant?.stock ?? 999, item.products.stock ?? 999)} data-cart-id={item.id}>
                               <button class="quantity-btn increase" data-cart-id={item.id}><i class="bi bi-plus"></i></button>
                             </div>
                             <div class="line-total" id={`item-total-${item.id}`}>
@@ -185,8 +206,6 @@ if (user) {
                       </div>
                     </div>
                   </div>
-
-                  <!-- TAX DIHAPUS -->
                 </div>
 
                 <div class="grand-total">
@@ -296,7 +315,6 @@ if (user) {
             .eq('id', cartId);
           
           if (!error) {
-
             document.dispatchEvent(new Event('cartUpdated'));
             window.location.reload();
           }

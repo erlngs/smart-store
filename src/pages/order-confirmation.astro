@@ -22,7 +22,7 @@ if (orderId) {
   order = orderData;
 
   if (order) {
-    // Ambil order items dengan produk
+    // Ambil order items dengan produk DAN varian
     const { data: items } = await supabase
       .from('order_items')
       .select(`
@@ -32,6 +32,11 @@ if (orderId) {
           name,
           slug,
           image_url
+        ),
+        product_variants (
+          id,
+          name,
+          value
         )
       `)
       .eq('order_id', order.id);
@@ -91,28 +96,59 @@ if (orderId) {
           <!-- Horizontal Progress Tracker -->
           <div class="progress-tracker" data-aos="fade-up" data-aos-delay="150">
             <div class="row g-0">
+              <!-- Step 1: Verified -->
               <div class="col-3">
                 <div class="tracker-step done">
-                  <div class="step-dot"></div>
-                  <span>Verified</span>
+                  <div class="step-dot">
+                    <i class="bi bi-check-lg"></i>
+                  </div>
+                  <span class="step-label">Verified</span>
+                  <small class="step-date">Order confirmed</small>
                 </div>
               </div>
+
+              <!-- Step 2: Processing -->
               <div class="col-3">
-                <div class={`tracker-step ${order.status === 'pending' || order.status === 'paid' ? 'active' : ''}`}>
-                  <div class="step-dot"></div>
-                  <span>In Progress</span>
+                <div class={`tracker-step ${order.status === 'pending' || order.status === 'paid' || order.status === 'processing' ? 'active' : ''}`}>
+                  <div class="step-dot">
+                    {order.status === 'pending' || order.status === 'paid' || order.status === 'processing' ? (
+                      <i class="bi bi-arrow-repeat"></i>
+                    ) : (
+                      <i class="bi bi-clock"></i>
+                    )}
+                  </div>
+                  <span class="step-label">Processing</span>
+                  <small class="step-date">Being prepared</small>
                 </div>
               </div>
+
+              <!-- Step 3: Dispatched -->
               <div class="col-3">
                 <div class={`tracker-step ${order.status === 'shipped' ? 'active' : ''}`}>
-                  <div class="step-dot"></div>
-                  <span>Dispatched</span>
+                  <div class="step-dot">
+                    {order.status === 'shipped' ? (
+                      <i class="bi bi-truck"></i>
+                    ) : (
+                      <i class="bi bi-box-seam"></i>
+                    )}
+                  </div>
+                  <span class="step-label">Dispatched</span>
+                  <small class="step-date">On the way</small>
                 </div>
               </div>
+
+              <!-- Step 4: Delivered -->
               <div class="col-3">
                 <div class={`tracker-step ${order.status === 'delivered' ? 'active' : ''}`}>
-                  <div class="step-dot"></div>
-                  <span>Arrived</span>
+                  <div class="step-dot">
+                    {order.status === 'delivered' ? (
+                      <i class="bi bi-house-check"></i>
+                    ) : (
+                      <i class="bi bi-house-door"></i>
+                    )}
+                  </div>
+                  <span class="step-label">Delivered</span>
+                  <small class="step-date">Arrived safely</small>
                 </div>
               </div>
             </div>
@@ -187,28 +223,36 @@ if (orderId) {
             <h3>Purchased Items</h3>
             <div class="row g-4">
               {orderItems && orderItems.length > 0 ? (
-                orderItems.map((item) => (
-                  <div class="col-md-6">
-                    <div class="product-row">
-                      <div class="product-thumb">
-                        <img src={item.products?.image_url || '/assets/store/img/product/product-placeholder.webp'} alt={item.products?.name || 'Product'} loading="lazy">
-                      </div>
-                      <div class="product-info">
-                        <h5>{item.products?.name || 'Product'}</h5>
-                        <div class="product-attrs">
-                          <span class="attr-tag">Qty: {item.quantity}</span>
-                          {item.discount_applied > 0 && (
-                            <span class="attr-tag" style="background: #dc3545; color: white;">Save {item.discount_applied}%</span>
-                          )}
+                orderItems.map((item) => {
+                  const variant = item.product_variants;
+                  const variantText = variant ? `${variant.name}: ${variant.value}` : '';
+                  
+                  return (
+                    <div class="col-md-6">
+                      <div class="product-row">
+                        <div class="product-thumb">
+                          <img src={item.products?.image_url || '/assets/store/img/product/product-placeholder.webp'} alt={item.products?.name || 'Product'} loading="lazy">
                         </div>
-                        <div class="product-qty-price">
-                          <span class="qty-label">Price per item</span>
-                          <span class="amount">Rp {item.price?.toLocaleString('id-ID') || 0}</span>
+                        <div class="product-info">
+                          <h5>{item.products?.name || 'Product'}</h5>
+                          <div class="product-attrs">
+                            {variantText && (
+                              <span class="attr-tag" style="background: #4e73df; color: white;">{variantText}</span>
+                            )}
+                            <span class="attr-tag">Qty: {item.quantity}</span>
+                            {item.discount_applied > 0 && (
+                              <span class="attr-tag" style="background: #dc3545; color: white;">Save {item.discount_applied}%</span>
+                            )}
+                          </div>
+                          <div class="product-qty-price">
+                            <span class="qty-label">Price per item</span>
+                            <span class="amount">Rp {item.price?.toLocaleString('id-ID') || 0}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div class="col-12">
                   <p class="text-muted">No items found</p>
@@ -228,7 +272,7 @@ if (orderId) {
                   <h5>Shipping Details</h5>
                   <p><i class="bi bi-calendar3"></i> Expected arrival: 3-5 business days</p>
                   <p><i class="bi bi-box-seam"></i> Standard Delivery</p>
-                  <p><i class="bi bi-tag"></i> Status: <span class="badge bg-{order.status === 'delivered' ? 'success' : order.status === 'cancelled' ? 'danger' : 'warning'}">{order.status || 'pending'}</span></p>
+                  <p><i class="bi bi-tag"></i> Status: <span class="badge bg-${order.status === 'delivered' ? 'success' : order.status === 'cancelled' ? 'danger' : 'warning'}">${order.status || 'pending'}</span></p>
                 </div>
               </div>
             </div>
@@ -283,3 +327,90 @@ if (orderId) {
   </section>
 
 </BaseLayout>
+
+<style is:global>
+  .progress-tracker {
+    padding: 20px 0;
+    margin-bottom: 30px;
+  }
+
+  .tracker-step {
+    text-align: center;
+    position: relative;
+    opacity: 0.4;
+    transition: all 0.3s ease;
+  }
+
+  .tracker-step.done {
+    opacity: 1;
+  }
+
+  .tracker-step.active {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+
+  .tracker-step .step-dot {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+    border: 3px solid #dee2e6;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    font-size: 18px;
+    color: #adb5bd;
+  }
+
+  .tracker-step.done .step-dot {
+    border-color: #28a745;
+    background: #d4edda;
+    color: #28a745;
+  }
+
+  .tracker-step.active .step-dot {
+    border-color: #007bff;
+    background: #cce5ff;
+    color: #007bff;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .tracker-step .step-label {
+    font-weight: 600;
+    font-size: 14px;
+    display: block;
+    color: #6c757d;
+  }
+
+  .tracker-step.done .step-label,
+  .tracker-step.active .step-label {
+    color: #212529;
+  }
+
+  .tracker-step .step-date {
+    display: block;
+    font-size: 11px;
+    color: #adb5bd;
+    margin-top: 2px;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+    }
+  }
+
+  /* HAPUS SEMUA GARIS CONNECTOR */
+  .progress-tracker .row::before,
+  .progress-tracker .row::after,
+  .progress-tracker .col-3::before,
+  .progress-tracker .col-3::after {
+    display: none !important;
+  }
+</style>

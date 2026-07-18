@@ -169,10 +169,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
           if (!data.user) throw new Error("Registration failed");
 
-          // Update profile with full name
+          // ===== UPDATE PROFILE DENGAN FULL NAME DAN EMAIL =====
           const { error: updateError } = await supabase
             .from('profiles')
-            .update({ full_name: fullName })
+            .update({ 
+              full_name: fullName,
+              email: email  // <-- TAMBAHKAN INI
+            })
             .eq('id', data.user.id);
 
           if (updateError) console.error('Update profile error:', updateError);
