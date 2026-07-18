@@ -49,6 +49,14 @@ const currentPath = Astro.url.pathname;
         </a>
       </li>
 
+      <!-- Reviews -->
+<li class="nav-item">
+  <a class="nav-link" class:list={{ active: currentPath === "/admin/reviews" || currentPath.startsWith("/admin/reviews") }} href="/admin/reviews">
+    <span class="nav-icon"><i class="bi bi-star"></i></span>
+    <span class="nav-text">Reviews</span>
+  </a>
+</li>
+
       <!-- Users -->
       <li class="nav-item">
         <a class="nav-link" class:list={{ active: currentPath === "/admin/users" || currentPath.startsWith("/admin/users") }} href="/admin/users">
