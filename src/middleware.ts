@@ -12,9 +12,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     error,
   } = await supabase.auth.getUser();
 
-  console.log('User hasil getUser():', user?.email, '| Error:', error?.message);
-  console.log('------------------------');
-
+  
   context.locals.supabase = supabase;
   context.locals.user = user;
 

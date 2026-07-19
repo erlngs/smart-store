@@ -1,29 +1,16 @@
 ---
 // src/components/home/PromoCards.astro
-// @ts-nocheck
-import { supabase } from "../../lib/supabase/client";
-
-// ===== AMBIL SETTINGS PROMO DARI CMS =====
-const { data: promoSettings } = await supabase
-  .from('settings')
-  .select('key, value')
-  .in('key', ['promo_title', 'promo_subtitle', 'promo_btn_text', 'promo_btn_link', 'promo_image']);
-
-const settings = {};
-promoSettings?.forEach(s => { settings[s.key] = s.value; });
+interface Props {
+  settings: Record<string, string>;
+  products: any[];
+}
+const { settings, products: promoProducts } = Astro.props;
 
 const promoTitle = settings['promo_title'] || 'Autumn Essentials';
 const promoSubtitle = settings['promo_subtitle'] || 'Temukan koleksi terbaru kami dengan harga terbaik';
 const promoBtnText = settings['promo_btn_text'] || 'Browse Collection';
 const promoBtnLink = settings['promo_btn_link'] || '/category';
 const promoImage = settings['promo_image'] || '/assets/store/img/product/product-showcase-6.webp';
-
-// ===== AMBIL 4 PRODUK UNTUK PROMO =====
-const { data: promoProducts } = await supabase
-  .from('products')
-  .select('*')
-  .eq('is_active', true)
-  .limit(4);
 ---
 
 <section id="promo-cards" class="promo-cards section">
@@ -52,6 +39,8 @@ const { data: promoProducts } = await supabase
                 alt={product.name} 
                 loading="lazy" 
                 class="img-fluid"
+                width="300" 
+                height="300"
               />
               <div class="tile-content">
                 <h4>{product.name}</h4>

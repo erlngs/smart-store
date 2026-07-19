@@ -535,9 +535,7 @@ function renderStars(rating) {
     const colorVariants = productData ? JSON.parse(productData.dataset.colorVariants || '[]') : [];
     const sizeVariants = productData ? JSON.parse(productData.dataset.sizeVariants || '[]') : [];
 
-    console.log('📦 Variants:', variants);
-    console.log('🎨 Color Variants:', colorVariants);
-    console.log('📏 Size Variants:', sizeVariants);
+    
 
     // ===== SELECT VARIANT =====
     let selectedColorId = null;

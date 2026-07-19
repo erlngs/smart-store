@@ -1,62 +1,54 @@
 ---
 // @ts-nocheck
-// src/pages/admin/orders.astro
 export const prerender = false;
 
 import AdminLayout from "../../layouts/AdminLayout.astro";
-import { supabase } from "../../lib/supabase/client";
+import { isUserAdmin } from "../../lib/supabase/server";
+
+const { supabase, user } = Astro.locals;
+
+if (!user) return Astro.redirect('/admin/login');
+const isAdmin = await isUserAdmin(supabase, user.id);
+if (!isAdmin) return Astro.redirect('/admin/login');
 
 // Ambil semua order
-const { data: orders, error } = await supabase
+const { data: orders } = await supabase
   .from('orders')
   .select('*')
   .order('created_at', { ascending: false });
 
-// Ambil profile untuk setiap order
 let ordersWithProfile = [];
+
 if (orders && orders.length > 0) {
-  for (const order of orders) {
-    // Ambil profile user (termasuk phone)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name, phone')
-      .eq('id', order.user_id)
-      .single();
-    
-    // Ambil order items
-    const { data: items } = await supabase
-      .from('order_items')
-      .select(`
-        id,
-        quantity,
-        price,
-        discount_applied,
-        product_id
-      `)
-      .eq('order_id', order.id);
-    
-    // Ambil nama produk untuk setiap item
-    let itemsWithProduct = [];
-    if (items && items.length > 0) {
-      for (const item of items) {
-        const { data: product } = await supabase
-          .from('products')
-          .select('name, image_url')
-          .eq('id', item.product_id)
-          .single();
-        itemsWithProduct.push({
-          ...item,
-          products: product
-        });
-      }
-    }
-    
-    ordersWithProfile.push({
+  const userIds = [...new Set(orders.map(o => o.user_id))];
+  const orderIds = orders.map(o => o.id);
+
+  // 3 query total, bukan ratusan
+  const [profilesRes, itemsRes] = await Promise.all([
+    supabase.from('profiles').select('id, full_name, phone').in('id', userIds),
+    supabase.from('order_items').select('id, order_id, quantity, price, discount_applied, product_id').in('order_id', orderIds),
+  ]);
+
+  const profiles = profilesRes.data || [];
+  const items = itemsRes.data || [];
+
+  const productIds = [...new Set(items.map(i => i.product_id))];
+  const { data: products } = productIds.length
+    ? await supabase.from('products').select('id, name, image_url').in('id', productIds)
+    : { data: [] };
+
+  ordersWithProfile = orders.map(order => {
+    const profile = profiles.find(p => p.id === order.user_id);
+    const orderItems = items
+      .filter(i => i.order_id === order.id)
+      .map(i => ({ ...i, products: products?.find(p => p.id === i.product_id) }));
+
+    return {
       ...order,
       profiles: profile || { full_name: 'Tidak Diketahui', phone: '-' },
-      order_items: itemsWithProduct
-    });
-  }
+      order_items: orderItems,
+    };
+  });
 }
 ---
 

@@ -4,11 +4,39 @@ import Hero from "../components/home/Hero.astro";
 import PromoCards from "../components/home/PromoCards.astro";
 import BestSellers from "../components/home/BestSellers.astro";
 import ProductTabs from "../components/home/ProductTabs.astro";
+import { getProductsWithRatings } from "../lib/products";
+
+const { supabase } = Astro.locals;
+
+const [
+  settingsRes,
+  heroProducts,
+  promoProductsRes,
+  bestSellerProducts,
+  popularProducts,
+  topRatedProducts,
+  curatedProducts,
+] = await Promise.all([
+  supabase.from('settings').select('key, value').in('key', [
+    'hero_title', 'hero_subtitle', 'hero_tagline', 'hero_btn_text', 'hero_btn_link',
+    'promo_title', 'promo_subtitle', 'promo_btn_text', 'promo_btn_link', 'promo_image'
+  ]),
+  getProductsWithRatings(supabase, { limit: 3 }),
+  supabase.from('products').select('*').eq('is_active', true).limit(4),
+  getProductsWithRatings(supabase, { limit: 4 }),
+  getProductsWithRatings(supabase, { limit: 3 }),
+  getProductsWithRatings(supabase, { limit: 3 }),
+  getProductsWithRatings(supabase, { limit: 3 }),
+]);
+
+const settings = {};
+settingsRes.data?.forEach(s => { settings[s.key] = s.value; });
+const promoProducts = promoProductsRes.data || [];
 ---
 
 <BaseLayout title="Home - SmartStore">
-  <Hero />
-  <PromoCards />
-  <BestSellers />
-  <ProductTabs />
+  <Hero settings={settings} products={heroProducts} />
+  <PromoCards settings={settings} products={promoProducts} />
+  <BestSellers products={bestSellerProducts} />
+  <ProductTabs popular={popularProducts} topRated={topRatedProducts} curated={curatedProducts} />
 </BaseLayout>

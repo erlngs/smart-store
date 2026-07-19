@@ -12,8 +12,7 @@ const { data: settings, error } = await supabase
   .select('*')
   .order('group_name', { ascending: true });
 
-console.log('📦 Settings from DB:', settings);
-console.log('❌ Error:', error);
+
 
 // Kelompokkan berdasarkan group
 const groupedSettings = {};
@@ -156,8 +155,7 @@ const keyToGroup = {
         });
       });
 
-      console.log('📝 Updates to save:', updates);
-
+      
       try {
         let hasError = false;
         let successCount = 0;

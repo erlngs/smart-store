@@ -1,55 +1,17 @@
 ---
 // src/components/home/BestSellers.astro
-// @ts-nocheck
-import { supabase } from "../../lib/supabase/client";
-
-// Ambil 4 produk terbaru
-const { data: products, error } = await supabase
-  .from('products')
-  .select('*')
-  .eq('is_active', true)
-  .order('created_at', { ascending: false })
-  .limit(4);
-
-// Ambil rating untuk setiap produk
-let productsWithRating = [];
-if (products && products.length > 0) {
-  for (const product of products) {
-    const { data: ratings } = await supabase
-      .from('reviews')
-      .select('rating')
-      .eq('product_id', product.id);
-    
-    let avgRating = 0;
-    let totalReviews = 0;
-    if (ratings && ratings.length > 0) {
-      totalReviews = ratings.length;
-      const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
-      avgRating = sum / totalReviews;
-    }
-    
-    productsWithRating.push({
-      ...product,
-      avgRating: avgRating,
-      totalReviews: totalReviews
-    });
-  }
+interface Props {
+  products: any[];
 }
+const { products: productsWithRating } = Astro.props;
 
-// Fungsi render stars untuk rating
-function renderStars(rating) {
+function renderStars(rating: number) {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
   let html = '';
-  for (let i = 0; i < fullStars; i++) {
-    html += '<i class="bi bi-star-fill"></i>';
-  }
-  if (hasHalfStar) {
-    html += '<i class="bi bi-star-half"></i>';
-  }
-  while (html.split('<i').length - 1 < 5) {
-    html += '<i class="bi bi-star"></i>';
-  }
+  for (let i = 0; i < fullStars; i++) html += '<i class="bi bi-star-fill"></i>';
+  if (hasHalfStar) html += '<i class="bi bi-star-half"></i>';
+  while (html.split('<i').length - 1 < 5) html += '<i class="bi bi-star"></i>';
   return html;
 }
 ---
@@ -81,6 +43,8 @@ function renderStars(rating) {
                       src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} 
                       alt={product.name} 
                       class="img-fluid" 
+                      width="300" 
+                      height="300"
                       loading="lazy"
                     />
                     <div class="quick-actions">

@@ -96,38 +96,7 @@ const { title } = Astro.props;
   <script is:inline src="/assets/admin/js/theme.js"></script>
   <script is:inline src="/assets/admin/js/main.js"></script>
 
-  <!-- ===== PROTEKSI ADMIN (PAKAI SCRIPT) ===== -->
-  <script>
-    import { supabaseAdmin as supabase } from "@/lib/supabase/client";
-
-    async function checkAdminAuth() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          window.location.href = "/admin/login";
-          return;
-        }
-
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-
-        if ((profile as any)?.role !== "admin") {
-          await supabase.auth.signOut();
-          window.location.href = "/admin/login";
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        window.location.href = "/admin/login";
-      }
-    }
-
-    // Jalankan proteksi
-    checkAdminAuth();
-  </script>
+ 
 
 </body>
 

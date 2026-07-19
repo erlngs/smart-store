@@ -1,20 +1,10 @@
 ---
 // src/components/home/Hero.astro
-// @ts-nocheck
-import { supabase } from "../../lib/supabase/client";
-
-// ===== AMBIL SETTINGS DARI CMS =====
-const { data: heroSettings } = await supabase
-  .from('settings')
-  .select('key, value')
-  .in('key', ['hero_title', 'hero_subtitle', 'hero_tagline', 'hero_btn_text', 'hero_btn_link']);
-
-const settings = {};
-heroSettings?.forEach(s => { settings[s.key] = s.value; });
-
-// TAMBAHKAN INI
-console.log('🔍 Hero Settings:', settings);
-console.log('📝 Hero Title:', settings['hero_title']);
+interface Props {
+  settings: Record<string, string>;
+  products: any[];
+}
+const { settings, products: productsWithRating } = Astro.props;
 
 const title = settings['hero_title'] || 'Elevate Your Everyday Style';
 const subtitle = settings['hero_subtitle'] || 'Temukan produk berkualitas terbaik hanya di SmartStore';
@@ -22,51 +12,13 @@ const tagline = settings['hero_tagline'] || 'Premium Collection';
 const btnText = settings['hero_btn_text'] || 'Explore Collection';
 const btnLink = settings['hero_btn_link'] || '/category';
 
-// ===== AMBIL PRODUK UNTUK HERO =====
-const { data: heroProducts } = await supabase
-  .from('products')
-  .select('*')
-  .eq('is_active', true)
-  .limit(3);
-
-// Ambil rating untuk produk hero
-let productsWithRating = [];
-if (heroProducts && heroProducts.length > 0) {
-  for (const product of heroProducts) {
-    const { data: ratings } = await supabase
-      .from('reviews')
-      .select('rating')
-      .eq('product_id', product.id);
-    
-    let avgRating = 0;
-    let totalReviews = 0;
-    if (ratings && ratings.length > 0) {
-      totalReviews = ratings.length;
-      const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
-      avgRating = sum / totalReviews;
-    }
-    
-    productsWithRating.push({
-      ...product,
-      avgRating: avgRating,
-      totalReviews: totalReviews
-    });
-  }
-}
-
-function renderStars(rating) {
+function renderStars(rating: number) {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
   let html = '';
-  for (let i = 0; i < fullStars; i++) {
-    html += '<i class="bi bi-star-fill"></i>';
-  }
-  if (hasHalfStar) {
-    html += '<i class="bi bi-star-half"></i>';
-  }
-  while (html.split('<i').length - 1 < 5) {
-    html += '<i class="bi bi-star"></i>';
-  }
+  for (let i = 0; i < fullStars; i++) html += '<i class="bi bi-star-fill"></i>';
+  if (hasHalfStar) html += '<i class="bi bi-star-half"></i>';
+  while (html.split('<i').length - 1 < 5) html += '<i class="bi bi-star"></i>';
   return html;
 }
 ---
@@ -94,10 +46,14 @@ function renderStars(rating) {
             <div class="showcase-card">
               <div class="card-visual">
                 <img 
-                  src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} 
-                  class="img-fluid" 
-                  alt={product.name}
-                />
+  src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} 
+  class="img-fluid" 
+  alt={product.name}
+  width="400"
+  height="400"
+  fetchpriority={index === 0 ? "high" : "auto"}
+  loading={index === 0 ? "eager" : "lazy"}
+/>
                 <span class="label">{product.discount > 0 ? `${product.discount}% Off` : 'Top Rated'}</span>
               </div>
               <div class="card-details">
