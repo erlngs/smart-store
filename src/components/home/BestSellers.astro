@@ -48,10 +48,16 @@ function renderStars(rating: number) {
                       loading="lazy"
                     />
                     <div class="quick-actions">
-                      <button class="qaction-btn"><i class="bi bi-heart"></i></button>
-                      <a href={`/product-details?slug=${product.slug}`} class="qaction-btn"><i class="bi bi-eye"></i></a>
-                      <button class="qaction-btn"><i class="bi bi-shuffle"></i></button>
-                    </div>
+  <button class="qaction-btn" aria-label={`Add ${product.name} to wishlist`}>
+    <i class="bi bi-heart" aria-hidden="true"></i>
+  </button>
+  <a href={`/product-details?slug=${product.slug}`} class="qaction-btn" aria-label={`Quick view ${product.name}`}>
+    <i class="bi bi-eye" aria-hidden="true"></i>
+  </a>
+  <button class="qaction-btn" aria-label={`Compare ${product.name}`}>
+    <i class="bi bi-shuffle" aria-hidden="true"></i>
+  </button>
+</div>
                   </div>
                 </div>
                 <div class="col-sm-7">

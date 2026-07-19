@@ -37,10 +37,9 @@ const currentPath = Astro.url.pathname;
           <!-- Header Actions -->
           <div class="header-actions d-flex align-items-center">
 
-            <!-- Mobile Search Toggle -->
-            <button class="action-icon mobile-search-toggle d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileSearch" aria-expanded="false" aria-controls="mobileSearch">
-              <i class="bi bi-search"></i>
-            </button>
+            <button class="action-icon mobile-search-toggle d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileSearch" aria-expanded="false" aria-controls="mobileSearch" aria-label="Toggle search">
+  <i class="bi bi-search" aria-hidden="true"></i>
+</button>
 
             <!-- Account -->
             <div class="dropdown account-dropdown">

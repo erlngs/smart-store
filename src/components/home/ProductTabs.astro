@@ -51,19 +51,24 @@ function renderStars(rating: number) {
                 <div class="item-card">
                   <div class="item-img">
                     <img 
-                      src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} 
-                      alt={product.name} 
-                      class="img-fluid"
-                      width="300" 
-                      height="300"
-                    />
+  src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} 
+  alt={product.name} 
+  class="img-fluid"
+  width="300"
+  height="300"
+  loading="lazy"
+/>
                     {product.discount > 0 && (
                       <span class="tag tag-fresh">-{product.discount}%</span>
                     )}
                     <div class="quick-actions">
-                      <a href="#"><i class="bi bi-heart"></i></a>
-                      <a href={`/product-details?slug=${product.slug}`}><i class="bi bi-bag-plus"></i></a>
-                    </div>
+  <a href="#" aria-label={`Add ${product.name} to wishlist`}>
+    <i class="bi bi-heart" aria-hidden="true"></i>
+  </a>
+  <a href={`/product-details?slug=${product.slug}`} aria-label={`View ${product.name} details`}>
+    <i class="bi bi-bag-plus" aria-hidden="true"></i>
+  </a>
+</div>
                   </div>
                   <div class="item-details">
                     <h4>{product.name}</h4>
@@ -100,17 +105,24 @@ function renderStars(rating: number) {
                 <div class="item-card">
                   <div class="item-img">
                     <img 
-                      src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} 
-                      alt={product.name} 
-                      class="img-fluid"
-                    />
+  src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} 
+  alt={product.name} 
+  class="img-fluid"
+  width="300"
+  height="300"
+  loading="lazy"
+/>
                     {product.discount > 0 && (
                       <span class="tag tag-discount">-{product.discount}%</span>
                     )}
                     <div class="quick-actions">
-                      <a href="#"><i class="bi bi-heart"></i></a>
-                      <a href={`/product-details?slug=${product.slug}`}><i class="bi bi-bag-plus"></i></a>
-                    </div>
+  <a href="#" aria-label={`Add ${product.name} to wishlist`}>
+    <i class="bi bi-heart" aria-hidden="true"></i>
+  </a>
+  <a href={`/product-details?slug=${product.slug}`} aria-label={`View ${product.name} details`}>
+    <i class="bi bi-bag-plus" aria-hidden="true"></i>
+  </a>
+</div>
                   </div>
                   <div class="item-details">
                     <h4>{product.name}</h4>
@@ -147,15 +159,22 @@ function renderStars(rating: number) {
                 <div class="item-card">
                   <div class="item-img">
                     <img 
-                      src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} 
-                      alt={product.name} 
-                      class="img-fluid"
-                    />
+  src={product.image_url || '/assets/store/img/product/product-placeholder.webp'} 
+  alt={product.name} 
+  class="img-fluid"
+  width="300"
+  height="300"
+  loading="lazy"
+/>
                     <span class="tag tag-exclusive">Exclusive</span>
                     <div class="quick-actions">
-                      <a href="#"><i class="bi bi-heart"></i></a>
-                      <a href={`/product-details?slug=${product.slug}`}><i class="bi bi-bag-plus"></i></a>
-                    </div>
+  <a href="#" aria-label={`Add ${product.name} to wishlist`}>
+    <i class="bi bi-heart" aria-hidden="true"></i>
+  </a>
+  <a href={`/product-details?slug=${product.slug}`} aria-label={`View ${product.name} details`}>
+    <i class="bi bi-bag-plus" aria-hidden="true"></i>
+  </a>
+</div>
                   </div>
                   <div class="item-details">
                     <h4>{product.name}</h4>
