@@ -1,27 +1,5 @@
 ---
 const currentPath = Astro.url.pathname;
-
-// Ambil dari middleware
-const { user, supabase } = Astro.locals;
-
-let profile = null;
-let cartCount = 0;
-
-if (user) {
-  const { data } = await supabase
-    .from('profiles')
-    .select('full_name')
-    .eq('id', user.id)
-    .single();
-  profile = data;
-
-  // Ambil cart count dari server
-  const { count } = await supabase
-    .from('cart')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id);
-  cartCount = count || 0;
-}
 ---
 
 <header id="header" class="header position-relative">
@@ -71,56 +49,58 @@ if (user) {
                 <span class="action-label d-none d-md-inline">Account</span>
               </button>
               <div class="dropdown-menu account-panel">
-                {user ? (
-                  <>
-                    <div class="account-panel-header">
-                      <h6>Welcome, {profile?.full_name || 'User'}!</h6>
-                      <p>{user.email}</p>
-                    </div>
-                    <div class="account-panel-links">
-                      <a href="/account">
-                        <i class="bi bi-person"></i>
-                        <span>My Account</span>
-                      </a>
-                      <a href="/account#orders">
-                        <i class="bi bi-box-seam"></i>
-                        <span>My Orders</span>
-                      </a>
-                      <a href="#">
-                        <i class="bi bi-heart"></i>
-                        <span>Wishlist</span>
-                      </a>
-                    </div>
-                    <div class="account-panel-auth">
-                      <button id="logoutBtnHeader" class="btn btn-danger w-100">Logout</button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div class="account-panel-header">
-                      <h6>Welcome!</h6>
-                      <p>Sign in for the best experience</p>
-                    </div>
-                    <div class="account-panel-auth">
-                      <a href="/login" class="btn btn-signin">Sign In</a>
-                      <a href="/register" class="btn btn-register">Create Account</a>
-                    </div>
-                    <div class="account-panel-links">
-                      <a href="#">
-                        <i class="bi bi-box-seam"></i>
-                        <span>My Orders</span>
-                      </a>
-                      <a href="#">
-                        <i class="bi bi-arrow-return-left"></i>
-                        <span>Returns &amp; Refunds</span>
-                      </a>
-                      <a href="#">
-                        <i class="bi bi-question-circle"></i>
-                        <span>Help Center</span>
-                      </a>
-                    </div>
-                  </>
-                )}
+
+                <!-- Versi LOGGED OUT (default tampil) -->
+                <div id="accountPanelGuest">
+                  <div class="account-panel-header">
+                    <h6>Welcome!</h6>
+                    <p>Sign in for the best experience</p>
+                  </div>
+                  <div class="account-panel-auth">
+                    <a href="/login" class="btn btn-signin">Sign In</a>
+                    <a href="/register" class="btn btn-register">Create Account</a>
+                  </div>
+                  <div class="account-panel-links">
+                    <a href="#">
+                      <i class="bi bi-box-seam"></i>
+                      <span>My Orders</span>
+                    </a>
+                    <a href="#">
+                      <i class="bi bi-arrow-return-left"></i>
+                      <span>Returns &amp; Refunds</span>
+                    </a>
+                    <a href="#">
+                      <i class="bi bi-question-circle"></i>
+                      <span>Help Center</span>
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Versi LOGGED IN (disembunyikan default, ditampilkan lewat JS) -->
+                <div id="accountPanelUser" style="display: none;">
+                  <div class="account-panel-header">
+                    <h6 id="accountUserName">Welcome, User!</h6>
+                    <p id="accountUserEmail"></p>
+                  </div>
+                  <div class="account-panel-links">
+                    <a href="/account">
+                      <i class="bi bi-person"></i>
+                      <span>My Account</span>
+                    </a>
+                    <a href="/account#orders">
+                      <i class="bi bi-box-seam"></i>
+                      <span>My Orders</span>
+                    </a>
+                   <a href="/wishlist">
+  <i class="bi bi-heart"></i>
+  <span>Wishlist <span id="wishlistCount" style="background: #dc3545; color: white; border-radius: 50%; padding: 0 6px; font-size: 10px; margin-left: 4px;">0</span></span>
+</a>
+                  </div>
+                  <div class="account-panel-auth">
+                    <button id="logoutBtnHeader" class="btn btn-danger w-100">Logout</button>
+                  </div>
+                </div>
+
               </div>
             </div>
 
@@ -129,24 +109,15 @@ if (user) {
               <button class="action-icon" data-bs-toggle="dropdown" aria-label="Cart">
                 <i class="bi bi-cart3"></i>
                 <span class="action-label d-none d-md-inline">Cart</span>
-                {cartCount > 0 && (
-                  <span class="count-dot" id="cartCountBadge">{cartCount}</span>
-                )}
-                {cartCount === 0 && (
-                  <span class="count-dot" id="cartCountBadge" style="display: none;">0</span>
-                )}
+                <span class="count-dot" id="cartCountBadge" style="display: none;">0</span>
               </button>
               <div class="dropdown-menu cart-panel" id="cartPanel">
                 <div class="cart-panel-header">
                   <h6>Shopping Cart</h6>
-                  <span class="item-count" id="cartItemCount">{cartCount} items</span>
+                  <span class="item-count" id="cartItemCount">0 items</span>
                 </div>
                 <div class="cart-panel-body" id="cartItems">
-                  {cartCount > 0 ? (
-                    <div id="cartItemsList"></div>
-                  ) : (
-                    <div class="text-center text-muted py-3">Keranjang kosong</div>
-                  )}
+                  <div id="cartItemsList"></div>
                 </div>
                 <div class="cart-panel-footer">
                   <div class="cart-subtotal">
@@ -175,7 +146,7 @@ if (user) {
             <li><a href="/" class:list={{ active: currentPath === "/" }}>Home</a></li>
             <li><a href="/about" class:list={{ active: currentPath === "/about" }}>About</a></li>
             <li><a href="/category" class:list={{ active: currentPath === "/category" }}>Category</a></li>
-            <li><a href="/artikel" class:list={{ active: currentPath === "/artikel" }}>Artikel</a></li>
+            <li><a href="/artikel" class:list={{ active: currentPath.startsWith("/artikel") }}>Artikel</a></li>
             
             <!-- Products Dropdown -->
             <li class="dropdown">
@@ -212,6 +183,53 @@ if (user) {
 <script>
   //@ts-nocheck
   import { supabase } from "@/lib/supabase/client";
+
+  // ============= CEK STATUS LOGIN (client-side) =============
+  async function checkAuthStatus() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const guestPanel = document.getElementById('accountPanelGuest');
+    const userPanel = document.getElementById('accountPanelUser');
+
+    if (session) {
+      guestPanel.style.display = 'none';
+      userPanel.style.display = 'block';
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', session.user.id)
+        .single();
+
+      const nameEl = document.getElementById('accountUserName');
+      const emailEl = document.getElementById('accountUserEmail');
+      if (nameEl) nameEl.textContent = `Welcome, ${profile?.full_name || 'User'}!`;
+      if (emailEl) emailEl.textContent = session.user.email || '';
+
+      // Load wishlist count
+      loadWishlistCount();
+    } else {
+      guestPanel.style.display = 'block';
+      userPanel.style.display = 'none';
+    }
+  }
+
+  // ============= FUNGSI LOAD WISHLIST COUNT =============
+  async function loadWishlistCount() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const wishlistCountEl = document.getElementById('wishlistCount');
+    
+    if (!session || !wishlistCountEl) return;
+
+    const { count, error } = await supabase
+      .from('wishlists')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', session.user.id);
+
+    if (!error) {
+      wishlistCountEl.textContent = count || 0;
+      wishlistCountEl.style.display = count > 0 ? 'inline' : 'none';
+    }
+  }
 
   // ============= FUNGSI LOAD PRODUCT DROPDOWN =============
   async function loadProductDropdown() {
@@ -251,7 +269,6 @@ if (user) {
       return;
     }
 
-    // Ambil cart items
     const { data: cartItems, error } = await supabase
       .from('cart')
       .select(`
@@ -269,7 +286,6 @@ if (user) {
       return;
     }
 
-    // Hitung subtotal
     let subtotal = 0;
     let itemsHtml = '';
 
@@ -307,7 +323,6 @@ if (user) {
     }
     if (cartSubtotal) cartSubtotal.textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
 
-    // Event listener untuk remove item di dropdown
     document.querySelectorAll('.remove-cart-item').forEach(btn => {
       btn.addEventListener('click', async function() {
         const cartId = this.dataset.cartId;
@@ -367,13 +382,26 @@ if (user) {
   });
 
   // ============= JALANKAN =============
+  checkAuthStatus();
   loadProductDropdown();
   loadCartItems();
   updateCartCount();
 
-  // ============= DENGARKAN EVENT CART UPDATED =============
+  // ============= DENGARKAN EVENT =============
   document.addEventListener('cartUpdated', function() {
     loadCartItems();
     updateCartCount();
+  });
+
+  document.addEventListener('wishlistUpdated', function() {
+    loadWishlistCount();
+  });
+
+  // ============= RE-CEK AUTH KALAU STATUS BERUBAH (login/logout) =============
+  supabase.auth.onAuthStateChange(() => {
+    checkAuthStatus();
+    loadCartItems();
+    updateCartCount();
+    loadWishlistCount();
   });
 </script>

@@ -217,9 +217,10 @@ function renderStars(rating) {
               <button class="btn add-cart-btn" id="addToCartBtn" data-product-id={product.id}>
                 <i class="bi bi-bag-plus"></i> Add to Cart
               </button>
-              <button class="btn fav-btn" title="Save to Wishlist">
-                <i class="bi bi-heart"></i>
-              </button>
+              <!-- Sesudah (tetap sama, script yang nanganin) -->
+<button class="btn fav-btn" title="Save to Wishlist">
+  <i class="bi bi-heart"></i>
+</button>
             </div>
 
             <button class="btn instant-buy-btn" id="instantBuyBtn">
@@ -828,6 +829,89 @@ function renderStars(rating) {
       modal.show();
     });
 
+    // ========================================================
+// ===== WISHLIST =====
+// ========================================================
+const favBtn = document.querySelector('.fav-btn');
+
+async function checkWishlistStatus() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  const productId = document.getElementById('addToCartBtn')?.dataset.productId;
+  if (!productId) return;
+
+  const { data } = await supabase
+    .from('wishlists')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .eq('product_id', productId)
+    .maybeSingle();
+
+  if (favBtn) {
+    if (data) {
+      favBtn.classList.add('active');
+      favBtn.innerHTML = '<i class="bi bi-heart-fill"></i>';
+    } else {
+      favBtn.classList.remove('active');
+      favBtn.innerHTML = '<i class="bi bi-heart"></i>';
+    }
+  }
+}
+
+// Toggle Wishlist
+if (favBtn) {
+  favBtn.addEventListener('click', async function() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const productId = document.getElementById('addToCartBtn')?.dataset.productId;
+    if (!productId) return;
+
+    const isActive = this.classList.contains('active');
+
+    if (isActive) {
+      // Hapus dari wishlist
+      const { error } = await supabase
+        .from('wishlists')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('product_id', productId);
+
+      if (!error) {
+        this.classList.remove('active');
+        this.innerHTML = '<i class="bi bi-heart"></i>';
+        document.dispatchEvent(new Event('wishlistUpdated'));
+      }
+    } else {
+      // Tambah ke wishlist
+      const { error } = await supabase
+        .from('wishlists')
+        .insert({
+          user_id: session.user.id,
+          product_id: productId
+        });
+
+      if (!error) {
+        this.classList.add('active');
+        this.innerHTML = '<i class="bi bi-heart-fill"></i>';
+        document.dispatchEvent(new Event('wishlistUpdated'));
+      }
+    }
+  });
+}
+
+// Cek status wishlist saat load
+checkWishlistStatus();
+
+// Event listener untuk update wishlist count di header
+document.addEventListener('wishlistUpdated', function() {
+  // Header akan update sendiri via event listener
+});
+
     // Submit Review
     document.getElementById('submitReviewBtn')?.addEventListener('click', async function() {
       const errorEl = document.getElementById('reviewError');
@@ -927,5 +1011,11 @@ function renderStars(rating) {
     .rating-stars .bi-star-half {
       color: #f59e0b !important;
     }
+    .fav-btn.active {
+  color: #dc3545 !important;
+}
+.fav-btn.active i {
+  color: #dc3545 !important;
+}
   </style>
 </BaseLayout>

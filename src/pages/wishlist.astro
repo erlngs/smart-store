@@ -1,0 +1,247 @@
+---
+// @ts-nocheck
+// src/pages/wishlist.astro
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Wishlist - SmartStore">
+
+  <!-- Page Title -->
+  <div class="page-title light-background">
+    <div class="container d-lg-flex justify-content-between align-items-center">
+      <h1 class="mb-2 mb-lg-0">My Wishlist</h1>
+      <nav class="breadcrumbs">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li class="current">Wishlist</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Wishlist Section -->
+  <section id="wishlist" class="wishlist section">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+      <!-- Loading State -->
+      <div id="wishlist-loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">Loading wishlist...</p>
+      </div>
+
+      <!-- Wishlist Content -->
+      <div id="wishlist-content" style="display: none;"></div>
+
+    </div>
+  </section>
+
+  <script>
+    //@ts-nocheck
+    import { supabase } from "@/lib/supabase/client";
+
+    async function loadWishlist() {
+      const loadingEl = document.getElementById('wishlist-loading');
+      const contentEl = document.getElementById('wishlist-content');
+
+      // Cek session di client
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        window.location.href = '/login';
+        return;
+      }
+
+      // Ambil wishlist user
+      const { data: wishlistItems, error } = await supabase
+        .from('wishlists')
+        .select(`
+          id,
+          product_id,
+          products (
+            id,
+            name,
+            slug,
+            price,
+            discount,
+            image_url,
+            stock
+          )
+        `)
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        contentEl.innerHTML = `
+          <div class="alert alert-danger text-center py-5">
+            <i class="bi bi-exclamation-triangle" style="font-size: 48px;"></i>
+            <h5 class="mt-3">Error loading wishlist</h5>
+            <p>Please try again later.</p>
+          </div>
+        `;
+        loadingEl.style.display = 'none';
+        contentEl.style.display = 'block';
+        return;
+      }
+
+      if (!wishlistItems || wishlistItems.length === 0) {
+        contentEl.innerHTML = `
+          <div class="text-center py-5">
+            <i class="bi bi-heart" style="font-size: 64px; color: #dee2e6;"></i>
+            <h3 class="mt-3">Your Wishlist is Empty</h3>
+            <p class="text-muted">Start adding your favorite products!</p>
+            <a href="/category" class="btn btn-primary mt-3">
+              <i class="bi bi-arrow-left me-2"></i>Start Shopping
+            </a>
+          </div>
+        `;
+        loadingEl.style.display = 'none';
+        contentEl.style.display = 'block';
+        return;
+      }
+
+      // Render wishlist items
+      let html = '<div class="row g-4">';
+      
+      wishlistItems.forEach((item) => {
+        const product = item.products;
+        const price = product?.price || 0;
+        const discount = product?.discount || 0;
+        const discountedPrice = price * (1 - discount / 100);
+        
+        html += `
+          <div class="col-md-6 col-lg-4" data-aos="fade-up">
+            <div class="card h-100 shadow-sm">
+              <div class="position-relative">
+                <img 
+                  src="${product?.image_url || '/assets/store/img/product/product-placeholder.webp'}" 
+                  alt="${product?.name || 'Product'}" 
+                  class="card-img-top"
+                  style="height: 250px; object-fit: cover;"
+                />
+                ${discount > 0 ? `
+                  <span class="position-absolute top-0 end-0 m-2 badge bg-danger">
+                    -${discount}%
+                  </span>
+                ` : ''}
+                <button 
+                  class="position-absolute top-0 end-0 m-3 btn btn-sm btn-danger remove-wishlist-btn" 
+                  data-wishlist-id="${item.id}"
+                  style="border-radius: 50%; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;"
+                >
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+              <div class="card-body">
+                <h5 class="card-title">
+                  <a href="/product-details?slug=${product?.slug}" class="text-decoration-none text-dark">
+                    ${product?.name || 'Product'}
+                  </a>
+                </h5>
+                <div class="card-text">
+                  ${discount > 0 ? `
+                    <span class="text-decoration-line-through text-muted">
+                      Rp ${price.toLocaleString('id-ID')}
+                    </span>
+                    <span class="text-danger fw-bold ms-2">
+                      Rp ${discountedPrice.toLocaleString('id-ID')}
+                    </span>
+                  ` : `
+                    <span class="fw-bold">Rp ${price.toLocaleString('id-ID')}</span>
+                  `}
+                </div>
+                ${product?.stock > 0 ? `
+                  <span class="badge bg-success">In Stock</span>
+                ` : `
+                  <span class="badge bg-danger">Out of Stock</span>
+                `}
+              </div>
+              <div class="card-footer bg-transparent border-0">
+                <button class="btn btn-primary w-100 add-to-cart-wishlist" data-product-id="${product?.id}">
+                  <i class="bi bi-cart-plus me-2"></i>Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+      
+      contentEl.innerHTML = html;
+      loadingEl.style.display = 'none';
+      contentEl.style.display = 'block';
+
+      // ===== REMOVE FROM WISHLIST =====
+      document.querySelectorAll('.remove-wishlist-btn').forEach((btn) => {
+        btn.addEventListener('click', async function() {
+          const wishlistId = this.dataset.wishlistId;
+          if (!confirm('Remove this product from wishlist?')) return;
+
+          const { error } = await supabase
+            .from('wishlists')
+            .delete()
+            .eq('id', wishlistId);
+
+          if (!error) {
+            document.dispatchEvent(new Event('wishlistUpdated'));
+            loadWishlist(); // Reload wishlist
+          }
+        });
+      });
+
+      // ===== ADD TO CART FROM WISHLIST =====
+      document.querySelectorAll('.add-to-cart-wishlist').forEach((btn) => {
+        btn.addEventListener('click', async function() {
+          const productId = this.dataset.productId;
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (!session) {
+            window.location.href = '/login';
+            return;
+          }
+
+          const { data: existing } = await supabase
+            .from('cart')
+            .select('id, quantity')
+            .eq('user_id', session.user.id)
+            .eq('product_id', productId)
+            .maybeSingle();
+
+          if (existing) {
+            const newQuantity = existing.quantity + 1;
+            const { error } = await supabase
+              .from('cart')
+              .update({ quantity: newQuantity })
+              .eq('id', existing.id);
+
+            if (error) {
+              alert('Failed to add to cart');
+            } else {
+              alert('Product added to cart!');
+              document.dispatchEvent(new Event('cartUpdated'));
+            }
+          } else {
+            const { error } = await supabase
+              .from('cart')
+              .insert({
+                user_id: session.user.id,
+                product_id: productId,
+                quantity: 1
+              });
+
+            if (error) {
+              alert('Failed to add to cart');
+            } else {
+              alert('Product added to cart!');
+              document.dispatchEvent(new Event('cartUpdated'));
+            }
+          }
+        });
+      });
+    }
+
+    loadWishlist();
+  </script>
+</BaseLayout>

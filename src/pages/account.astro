@@ -50,7 +50,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
               <div class="stat-pills">
                 <div class="pill-item"><span id="orderCount" class="pill-val">0</span><span class="pill-txt">Orders</span></div>
                 <div class="pill-item"><span id="trackCount" class="pill-val">0</span><span class="pill-txt">Tracking</span></div>
-                <div class="pill-item"><span class="pill-val">0</span><span class="pill-txt">Saved</span></div>
+                <div class="pill-item"><span id="wishlistCount" class="pill-val">0</span><span class="pill-txt">Saved</span></div>
                 <div class="pill-item"><span id="reviewCount" class="pill-val">0</span><span class="pill-txt">Reviews</span></div>
               </div>
             </div>
@@ -115,14 +115,15 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             </div>
           </div>
 
-          <!-- Favorites Tab -->
+          <!-- Favorites Tab (Wishlist) -->
           <div class="tab-pane fade" id="account-tab-wishlist">
             <div class="panel-header" data-aos="fade-up">
               <h2>Saved Favorites</h2>
             </div>
-            <div class="text-center py-5">
-              <p class="text-muted">Belum ada produk favorit.</p>
-              <a href="/category" class="btn btn-primary">Cari Produk</a>
+            <div id="wishlistList" class="wishlist-list">
+              <div class="text-center py-5">
+                <p class="text-muted">Loading wishlist...</p>
+              </div>
             </div>
           </div>
 
@@ -223,17 +224,37 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           .eq('user_id', session.user.id)
           .order('created_at', { ascending: false });
 
+        // ===== AMBIL WISHLIST =====
+        const { data: wishlistItems, count: wishlistCount } = await supabase
+          .from('wishlists')
+          .select(`
+            id,
+            product_id,
+            products (
+              id,
+              name,
+              slug,
+              price,
+              discount,
+              image_url
+            )
+          `, { count: 'exact' })
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false });
+
         // ===== UPDATE UI =====
         const firstName = (profile as any)?.full_name || 'User';
         const userNameEl = document.getElementById('userName');
         const userAvatarEl = document.getElementById('userAvatar');
         const orderCountEl = document.getElementById('orderCount');
         const trackCountEl = document.getElementById('trackCount');
+        const wishlistCountEl = document.getElementById('wishlistCount');
         const reviewCountEl = document.getElementById('reviewCount');
         if (userNameEl) userNameEl.textContent = firstName;
         if (userAvatarEl) userAvatarEl.textContent = firstName.charAt(0);
         if (orderCountEl) orderCountEl.textContent = String(orderCount || 0);
         if (trackCountEl) trackCountEl.textContent = String(trackOrders?.length || 0);
+        if (wishlistCountEl) wishlistCountEl.textContent = String(wishlistCount || 0);
         if (reviewCountEl) reviewCountEl.textContent = String(reviewCount || 0);
 
         // ===== ISI FORM PROFILE =====
@@ -433,6 +454,112 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           }
         }
 
+        // ===== RENDER WISHLIST =====
+        const wishlistList = document.getElementById('wishlistList');
+        if (wishlistList) {
+          if (wishlistItems && wishlistItems.length > 0) {
+            wishlistList.innerHTML = (wishlistItems as any[]).map((item) => {
+              const product = item.products;
+              const price = product?.price || 0;
+              const discount = product?.discount || 0;
+              const discountedPrice = price * (1 - discount / 100);
+              
+              return `
+                <div class="wishlist-item" data-aos="fade-up" style="border-bottom: 1px solid #eee; padding: 20px 0;">
+                  <div class="row align-items-center">
+                    <div class="col-md-2">
+                      <img 
+                        src="${product?.image_url || '/assets/store/img/product/product-placeholder.webp'}" 
+                        alt="${product?.name || 'Product'}" 
+                        style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;"
+                      />
+                    </div>
+                    <div class="col-md-5">
+                      <h5>
+                        <a href="/product-details?slug=${product?.slug}" style="color: #212529; text-decoration: none;">
+                          ${product?.name || 'Product'}
+                        </a>
+                      </h5>
+                      <div class="text-muted small">
+                        ${discount > 0 ? `
+                          <span class="text-decoration-line-through">Rp ${price.toLocaleString('id-ID')}</span>
+                          <span class="text-danger fw-bold">Rp ${discountedPrice.toLocaleString('id-ID')}</span>
+                        ` : `
+                          <span class="fw-bold">Rp ${price.toLocaleString('id-ID')}</span>
+                        `}
+                      </div>
+                    </div>
+                    <div class="col-md-5 text-end">
+                      <button class="btn btn-sm btn-outline-primary add-to-cart-wishlist" data-product-id="${product?.id}">
+                        <i class="bi bi-cart-plus me-1"></i>Add to Cart
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger remove-wishlist-btn" data-wishlist-id="${item.id}">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+            // ===== REMOVE FROM WISHLIST =====
+            document.querySelectorAll('.remove-wishlist-btn').forEach((btn) => {
+              btn.addEventListener('click', async function() {
+                const wishlistId = this.dataset.wishlistId;
+                if (!confirm('Hapus dari favorit?')) return;
+
+                const { error } = await supabase
+                  .from('wishlists')
+                  .delete()
+                  .eq('id', wishlistId);
+
+                if (!error) {
+                  alert('Produk dihapus dari favorit!');
+                  window.location.reload();
+                }
+              });
+            });
+
+            // ===== ADD TO CART FROM WISHLIST =====
+            document.querySelectorAll('.add-to-cart-wishlist').forEach((btn) => {
+              btn.addEventListener('click', async function() {
+                const productId = this.dataset.productId;
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                  window.location.href = '/login';
+                  return;
+                }
+
+                const { error } = await supabase
+                  .from('cart')
+                  .insert({
+                    user_id: session.user.id,
+                    product_id: productId,
+                    quantity: 1
+                  });
+
+                if (error) {
+                  alert('Gagal menambahkan ke keranjang');
+                } else {
+                  alert('Produk ditambahkan ke keranjang!');
+                  document.dispatchEvent(new Event('cartUpdated'));
+                  window.location.reload();
+                }
+              });
+            });
+
+          } else {
+            wishlistList.innerHTML = `
+              <div class="text-center py-5">
+                <i class="bi bi-heart" style="font-size: 48px; color: #dee2e6;"></i>
+                <h5 class="mt-3">Belum ada produk favorit</h5>
+                <p class="text-muted">Mulai tambahkan produk ke favoritmu!</p>
+                <a href="/category" class="btn btn-primary">Cari Produk</a>
+              </div>
+            `;
+          }
+        }
+
         // Tampilkan content, hide loading
         if (loadingEl) loadingEl.style.display = 'none';
         if (contentEl) contentEl.style.display = 'block';
@@ -521,7 +648,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       if (spinner) spinner.classList.add('d-none');
     });
 
-      // ===== JALANKAN =====
+    // ===== JALANKAN =====
     loadAccount();
 
     // ===== BUKA TAB BERDASARKAN PARAMETER URL =====
@@ -539,7 +666,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       
       const targetId = tabMap[tab];
       if (targetId) {
-        // Tunggu sebentar biar DOM siap
         setTimeout(() => {
           const targetTab = document.querySelector(`[data-bs-target="#${targetId}"]`);
           if (targetTab) {
