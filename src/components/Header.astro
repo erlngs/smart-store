@@ -175,6 +175,7 @@ if (user) {
             <li><a href="/" class:list={{ active: currentPath === "/" }}>Home</a></li>
             <li><a href="/about" class:list={{ active: currentPath === "/about" }}>About</a></li>
             <li><a href="/category" class:list={{ active: currentPath === "/category" }}>Category</a></li>
+            <li><a href="/artikel" class:list={{ active: currentPath === "/artikel" }}>Artikel</a></li>
             
             <!-- Products Dropdown -->
             <li class="dropdown">
@@ -188,8 +189,7 @@ if (user) {
 
             <li><a href="/cart" class:list={{ active: currentPath === "/cart" }}>Cart</a></li>
             <li><a href="/checkout" class:list={{ active: currentPath === "/checkout" }}>Checkout</a></li>
-            <li><a href="/contact" class:list={{ active: currentPath === "/contact" }}>Contact</a></li>
-            <li><a href="/account" class:list={{ active: currentPath === "/account" }}>Track Order</a></li>
+            <li><a href="/account?tab=track" class:list={{ active: currentPath === "/account" }}>Track Order</a></li>
           </ul>
         </nav>
       </div>

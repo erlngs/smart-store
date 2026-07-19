@@ -33,6 +33,29 @@ const { title } = Astro.props;
 
   <!-- Main CSS -->
   <link href="/assets/admin/css/main.css" rel="stylesheet">
+
+  <!-- ===== GLOBAL CURSOR POINTER (ADMIN) ===== -->
+  <style>
+    a,
+    button,
+    [role="button"],
+    .btn,
+    .nav-link,
+    .dropdown-item,
+    .clickable {
+      cursor: pointer !important;
+    }
+
+    a[href] {
+      cursor: pointer !important;
+    }
+
+    button:disabled,
+    a.disabled,
+    .disabled {
+      cursor: not-allowed !important;
+    }
+  </style>
 </head>
 
 <body>
@@ -92,7 +115,7 @@ const { title } = Astro.props;
           .eq("id", session.user.id)
           .single();
 
-        if (profile?.role !== "admin") {
+        if ((profile as any)?.role !== "admin") {
           await supabase.auth.signOut();
           window.location.href = "/admin/login";
         }

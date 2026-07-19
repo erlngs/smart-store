@@ -57,6 +57,22 @@ const currentPath = Astro.url.pathname;
   </a>
 </li>
 
+<!-- CMS Orders -->
+<li class="nav-item">
+  <a class="nav-link" class:list={{ active: currentPath === "/admin/cms" || currentPath.startsWith("/admin/cms") }} href="/admin/cms">
+    <span class="nav-icon"><i class="ph-light ph-gear"></i></span>
+    <span class="nav-text">Web Settings</span>
+  </a>
+</li>
+
+<!-- Artikel -->
+<li class="nav-item">
+  <a class="nav-link" class:list={{ active: currentPath === "/admin/articles" || currentPath.startsWith("/admin/articles") }} href="/admin/articles">
+    <span class="nav-icon"><i class="ph-light ph-newspaper"></i></span>
+    <span class="nav-text">Artikel</span>
+  </a>
+</li>
+
       <!-- Users -->
       <li class="nav-item">
         <a class="nav-link" class:list={{ active: currentPath === "/admin/users" || currentPath.startsWith("/admin/users") }} href="/admin/users">

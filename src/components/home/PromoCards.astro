@@ -1,8 +1,24 @@
 ---
 // src/components/home/PromoCards.astro
+// @ts-nocheck
 import { supabase } from "../../lib/supabase/client";
 
-// Ambil 4 produk untuk promo
+// ===== AMBIL SETTINGS PROMO DARI CMS =====
+const { data: promoSettings } = await supabase
+  .from('settings')
+  .select('key, value')
+  .in('key', ['promo_title', 'promo_subtitle', 'promo_btn_text', 'promo_btn_link', 'promo_image']);
+
+const settings = {};
+promoSettings?.forEach(s => { settings[s.key] = s.value; });
+
+const promoTitle = settings['promo_title'] || 'Autumn Essentials';
+const promoSubtitle = settings['promo_subtitle'] || 'Temukan koleksi terbaru kami dengan harga terbaik';
+const promoBtnText = settings['promo_btn_text'] || 'Browse Collection';
+const promoBtnLink = settings['promo_btn_link'] || '/category';
+const promoImage = settings['promo_image'] || '/assets/store/img/product/product-showcase-6.webp';
+
+// ===== AMBIL 4 PRODUK UNTUK PROMO =====
 const { data: promoProducts } = await supabase
   .from('products')
   .select('*')
@@ -15,12 +31,12 @@ const { data: promoProducts } = await supabase
     <div class="row mb-4">
       <div class="col-12">
         <div class="featured-banner" data-aos="zoom-in" data-aos-delay="150">
-          <img src="/assets/store/img/product/product-showcase-6.webp" alt="Autumn Essentials" class="img-fluid">
+          <img src={promoImage} alt={promoTitle} class="img-fluid">
           <div class="banner-content">
             <span class="badge-label">Fresh Arrivals</span>
-            <h2>Autumn Essentials</h2>
-            <p>Temukan koleksi terbaru kami dengan harga terbaik</p>
-            <a href="/category" class="btn-explore">Browse Collection <i class="bi bi-arrow-right"></i></a>
+            <h2>{promoTitle}</h2>
+            <p>{promoSubtitle}</p>
+            <a href={promoBtnLink} class="btn-explore">{promoBtnText} <i class="bi bi-arrow-right"></i></a>
           </div>
         </div>
       </div>

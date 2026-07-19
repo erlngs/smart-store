@@ -1,8 +1,28 @@
 ---
 // src/components/home/Hero.astro
+// @ts-nocheck
 import { supabase } from "../../lib/supabase/client";
 
-// Ambil 3 produk untuk hero
+// ===== AMBIL SETTINGS DARI CMS =====
+const { data: heroSettings } = await supabase
+  .from('settings')
+  .select('key, value')
+  .in('key', ['hero_title', 'hero_subtitle', 'hero_tagline', 'hero_btn_text', 'hero_btn_link']);
+
+const settings = {};
+heroSettings?.forEach(s => { settings[s.key] = s.value; });
+
+// TAMBAHKAN INI
+console.log('🔍 Hero Settings:', settings);
+console.log('📝 Hero Title:', settings['hero_title']);
+
+const title = settings['hero_title'] || 'Elevate Your Everyday Style';
+const subtitle = settings['hero_subtitle'] || 'Temukan produk berkualitas terbaik hanya di SmartStore';
+const tagline = settings['hero_tagline'] || 'Premium Collection';
+const btnText = settings['hero_btn_text'] || 'Explore Collection';
+const btnLink = settings['hero_btn_link'] || '/category';
+
+// ===== AMBIL PRODUK UNTUK HERO =====
 const { data: heroProducts } = await supabase
   .from('products')
   .select('*')
@@ -34,7 +54,7 @@ if (heroProducts && heroProducts.length > 0) {
   }
 }
 
-function renderStars(rating: number) {
+function renderStars(rating) {
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
   let html = '';
@@ -56,11 +76,11 @@ function renderStars(rating: number) {
     <div class="row justify-content-center text-center">
       <div class="col-lg-8">
         <div class="headline-block" data-aos="zoom-in" data-aos-delay="100">
-          <span class="tagline">Premium Collection</span>
-          <h1 class="main-heading">Elevate Your Everyday Style</h1>
-          <p class="lead-text">Temukan produk berkualitas terbaik hanya di SmartStore</p>
+          <span class="tagline">{tagline}</span>
+          <h1 class="main-heading">{title}</h1>
+          <p class="lead-text">{subtitle}</p>
           <div class="cta-group" data-aos="fade-up" data-aos-delay="200">
-            <a href="/category" class="btn-explore">Explore Collection</a>
+            <a href={btnLink} class="btn-explore">{btnText}</a>
             <a href="/category" class="btn-outline-explore"><i class="bi bi-grid me-2"></i>View Categories</a>
           </div>
         </div>

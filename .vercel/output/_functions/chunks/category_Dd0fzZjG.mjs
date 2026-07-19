@@ -1,0 +1,64 @@
+import { n as __exportAll, t as createComponent } from "./compiler_Dbt8-yav.mjs";
+import { C as createAstro, _ as addAttribute, d as renderTemplate, h as maybeRenderHead, i as renderComponent, x as unescapeHTML } from "./server_BaILKhbv.mjs";
+import { t as renderScript } from "./script_QDTy_Iu8.mjs";
+import { t as $$BaseLayout } from "./BaseLayout_DUuxkatV.mjs";
+//#region src/pages/category.astro
+var category_exports = /* @__PURE__ */ __exportAll({
+	default: () => $$Category,
+	file: () => $$file,
+	prerender: () => false,
+	url: () => $$url
+});
+createAstro("https://astro.build");
+var $$Category = createComponent(async ($$result, $$props, $$slots) => {
+	const Astro = $$result.createAstro($$props, $$slots);
+	Astro.self = $$Category;
+	const { supabase } = Astro.locals;
+	const categoryFilter = Astro.url.searchParams.get("cat");
+	const searchQuery = Astro.url.searchParams.get("search");
+	let query = supabase.from("products").select("*").eq("is_active", true).order("created_at", { ascending: false });
+	if (categoryFilter) query = query.eq("category", categoryFilter);
+	if (searchQuery) query = query.ilike("name", `%${searchQuery}%`);
+	const { data: products } = await query;
+	let productsWithRating = [];
+	if (products && products.length > 0) for (const product of products) {
+		const { data: ratings } = await supabase.from("reviews").select("rating").eq("product_id", product.id);
+		let avgRating = 0;
+		let totalReviews = 0;
+		if (ratings && ratings.length > 0) {
+			totalReviews = ratings.length;
+			avgRating = ratings.reduce((acc, r) => acc + r.rating, 0) / totalReviews;
+		}
+		productsWithRating.push({
+			...product,
+			avgRating,
+			totalReviews
+		});
+	}
+	const { data: allProducts } = await supabase.from("products").select("category").eq("is_active", true);
+	const uniqueCategories = [...new Set(allProducts?.map((p) => p.category).filter(Boolean))];
+	const totalProducts = products?.length || 0;
+	function renderStars(rating) {
+		const fullStars = Math.floor(rating);
+		const hasHalfStar = rating % 1 >= .5;
+		const stars = [];
+		for (let i = 0; i < fullStars; i++) stars.push("<i class=\"bi bi-star-fill\"></i>");
+		if (hasHalfStar) stars.push("<i class=\"bi bi-star-half\"></i>");
+		while (stars.length < 5) stars.push("<i class=\"bi bi-star\"></i>");
+		return stars.join("");
+	}
+	return renderTemplate`${renderComponent($$result, "BaseLayout", $$BaseLayout, {
+		"title": "Category - SmartStore",
+		"bodyClass": "category"
+	}, { "default": async ($$result) => renderTemplate`${maybeRenderHead($$result)}<div class="container"><div class="row"><!-- Sidebar --><div class="col-lg-4 sidebar"><div class="widgets-container"><!-- Product Categories Widget --><div class="product-categories-widget widget-item"><h3 class="widget-title">Categories</h3><ul class="category-tree list-unstyled mb-0">${uniqueCategories && uniqueCategories.length > 0 ? uniqueCategories.map((category) => {
+		const count = products?.filter((p) => p.category === category).length || 0;
+		return renderTemplate`<li class="category-item"><div class="d-flex justify-content-between align-items-center category-header"><a${addAttribute(`/category?cat=${encodeURIComponent(category)}`, "href")} class="category-link">${category}</a><span class="badge bg-secondary rounded-pill">${count}</span></div></li>`;
+	}) : renderTemplate`<li class="category-item"><div class="category-header"><span class="text-muted">No categories</span></div></li>`}</ul></div><!-- Pricing Range Widget --><div class="pricing-range-widget widget-item"><h3 class="widget-title">Price Range</h3><div class="price-range-container"><form id="priceFilterForm"><div class="row g-2"><div class="col-6"><div class="input-group input-group-sm"><span class="input-group-text">Rp</span><input type="number" class="form-control" id="minPrice" placeholder="Min" value="0"></div></div><div class="col-6"><div class="input-group input-group-sm"><span class="input-group-text">Rp</span><input type="number" class="form-control" id="maxPrice" placeholder="Max" value="10000000"></div></div></div><button type="submit" class="btn btn-sm btn-primary w-100 mt-3">Apply Filter</button></form></div></div></div></div><!-- Main Content --><div class="col-lg-8"><!-- Category Header Section --><section id="category-header" class="category-header section"><div class="container section-title" data-aos="fade-up"><h2>${categoryFilter || "All Products"}</h2><p>${totalProducts} products available</p></div><div class="container" data-aos="fade-up" data-aos-delay="100"><!-- Search Bar --><div class="search-bar" data-aos="fade-down" data-aos-delay="100"><form id="searchForm" class="d-flex w-100" style="position:relative;"><i class="bi bi-search search-icon" style="position:absolute; left:15px; top:50%; transform:translateY(-50%); z-index:10;"></i><input type="text" class="search-input" id="productSearch" placeholder="Find what you're looking for..." aria-label="Search products" style="padding-left:45px;"${addAttribute(searchQuery || "", "value")}><button class="search-action" type="submit">Search</button></form></div><!-- Toolbar --><div class="toolbar" data-aos="fade-up" data-aos-delay="200"><div class="row align-items-center g-3"><div class="col-lg-8 col-md-12"><div class="filter-group"><div class="filter-dropdown"><label for="sortBy">Sort By</label><select class="form-select" id="sortBy"><option value="newest">Newest</option><option value="price_low">Price: Low to High</option><option value="price_high">Price: High to Low</option></select></div></div></div><div class="col-lg-4 col-md-12"><div class="toolbar-actions"><div class="display-toggle"><button type="button" class="toggle-btn active" data-view="grid" aria-label="Grid view"><i class="bi bi-grid-3x3-gap-fill"></i><span>Grid</span></button><button type="button" class="toggle-btn" data-view="list" aria-label="List view"><i class="bi bi-list-ul"></i><span>List</span></button></div></div></div></div></div></div></section><!-- Category Product List Section --><section id="category-product-list" class="category-product-list section"><div class="container section-title" data-aos="fade-up"><h2>Category Product List</h2><p>Temukan berbagai produk berkualitas dengan harga terbaik di SmartStore</p></div><div class="container" data-aos="fade-up" data-aos-delay="100"><div class="row g-3 g-lg-4" id="productGrid">${productsWithRating && productsWithRating.length > 0 ? productsWithRating.map((product, index) => renderTemplate`<div class="col-6 col-lg-4" data-aos="fade-up"${addAttribute(100 + index * 50, "data-aos-delay")}><article class="item-card"><div class="item-media"><img${addAttribute(product.image_url || "/assets/store/img/product/product-placeholder.webp", "src")} class="primary-img img-fluid"${addAttribute(product.name, "alt")} loading="lazy">${product.discount > 0 && renderTemplate`<span class="item-label label-sale">-${product.discount}%</span>`}<button type="button" class="wishlist-toggle" aria-label="Add to wishlist"><i class="bi bi-heart"></i></button><div class="quick-add"><a${addAttribute(`/product-details?slug=${product.slug}`, "href")} class="quick-add-btn"><i class="bi bi-eye me-1"></i> View Details</a></div></div><div class="item-info"><span class="item-tag">${product.category || "General"}</span><h4 class="item-name"><a${addAttribute(`/product-details?slug=${product.slug}`, "href")}>${product.name}</a></h4><div class="item-stars">${unescapeHTML(renderStars(product.avgRating))}</div><span class="review-count">(${product.totalReviews})</span><div class="item-bottom">${product.discount > 0 ? renderTemplate`<span class="item-cost">Rp ${(product.price * (1 - product.discount / 100)).toLocaleString("id-ID")}<del class="was-price">Rp ${product.price.toLocaleString("id-ID")}</del></span>` : renderTemplate`<span class="item-cost">Rp ${product.price.toLocaleString("id-ID")}</span>`}<button type="button" class="cart-icon-btn add-to-cart"${addAttribute(product.id, "data-product-id")} aria-label="Add to cart"><i class="bi bi-cart3"></i></button></div></div></article></div>`) : renderTemplate`<div class="col-12 text-center py-5"><p class="text-muted">No products found.</p></div>`}</div></div></section><!-- Category Pagination Section --><section id="category-pagination" class="category-pagination section"><div class="container"><div class="pagination-wrapper" data-aos="fade-up" data-aos-delay="100"><div class="page-info">Displaying page <strong>1</strong> of <strong>1</strong></div><nav aria-label="Page navigation"><div class="pagination-track"><a href="#" class="nav-arrow prev disabled" aria-label="Previous page"><i class="bi bi-chevron-left"></i></a><div class="page-numbers"><a href="#" class="page-num active">1</a></div><a href="#" class="nav-arrow next disabled" aria-label="Next page"><i class="bi bi-chevron-right"></i></a></div></nav></div></div></section></div></div></div>${renderScript($$result, "D:/TUGAS KULIAH/Project MKI/SmartStore/src/pages/category.astro?astro&type=script&index=0&lang.ts")}` })}`;
+}, "D:/TUGAS KULIAH/Project MKI/SmartStore/src/pages/category.astro", void 0);
+var $$file = "D:/TUGAS KULIAH/Project MKI/SmartStore/src/pages/category.astro";
+var $$url = "/category";
+//#endregion
+//#region \0virtual:astro:page:src/pages/category@_@astro
+var page = () => category_exports;
+//#endregion
+export { page };

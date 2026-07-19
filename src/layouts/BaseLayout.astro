@@ -5,9 +5,10 @@ import Footer from "../components/Footer.astro";
 interface Props {
   title: string;
   bodyClass?: string;
+  description?: string;
 }
 
-const { title, bodyClass = "" } = Astro.props;
+const { title, bodyClass = "", description = "SmartStore - Belanja online produk berkualitas dengan harga terbaik." } = Astro.props;
 ---
 
 <!DOCTYPE html>
@@ -16,6 +17,7 @@ const { title, bodyClass = "" } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
+    <meta name="description" content={description} />
 
     <link href="/assets/store/img/favicon.png" rel="icon" />
     <link href="/assets/store/img/apple-touch-icon.png" rel="apple-touch-icon" />
@@ -34,6 +36,31 @@ const { title, bodyClass = "" } = Astro.props;
     <link href="/assets/store/vendor/drift-zoom/drift-basic.css" rel="stylesheet" />
     <link href="/assets/store/vendor/glightbox/css/glightbox.min.css" rel="stylesheet" />
     <link href="/assets/store/css/main.css" rel="stylesheet" />
+
+    <!-- ===== GLOBAL CURSOR POINTER ===== -->
+    <style>
+      a,
+      button,
+      [role="button"],
+      .btn,
+      .nav-link,
+      .dropdown-item,
+      .clickable {
+        cursor: pointer !important;
+      }
+
+      a[href] {
+        cursor: pointer !important;
+      }
+
+      button:disabled,
+      a.disabled,
+      .disabled {
+        cursor: not-allowed !important;
+      }
+    </style>
+
+    <slot name="head" />
   </head>
 
   <body>

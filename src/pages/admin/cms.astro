@@ -1,0 +1,218 @@
+---
+// @ts-nocheck
+// src/pages/admin/cms.astro
+export const prerender = false;
+
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { supabase } from "../../lib/supabase/client";
+
+// Ambil semua settings
+const { data: settings, error } = await supabase
+  .from('settings')
+  .select('*')
+  .order('group_name', { ascending: true });
+
+console.log('📦 Settings from DB:', settings);
+console.log('❌ Error:', error);
+
+// Kelompokkan berdasarkan group
+const groupedSettings = {};
+if (settings) {
+  settings.forEach(s => {
+    if (!groupedSettings[s.group_name]) {
+      groupedSettings[s.group_name] = [];
+    }
+    groupedSettings[s.group_name].push(s);
+  });
+}
+
+const groupLabels = {
+  'hero': 'Hero Section',
+  'cta': 'Call to Action',
+  'promo': 'Promo Banner',
+  'footer': 'Footer',
+  'social': 'Social Media',
+  'general': 'General Settings',
+  'test_group': 'Test Group'
+};
+
+// Mapping key ke group_name untuk update
+const keyToGroup = {
+  'hero_title': 'hero',
+  'hero_subtitle': 'hero',
+  'hero_tagline': 'hero',
+  'hero_btn_text': 'hero',
+  'hero_btn_link': 'hero',
+  'hero_image': 'hero',
+  'cta_title': 'cta',
+  'cta_subtitle': 'cta',
+  'cta_btn_text': 'cta',
+  'cta_btn_link': 'cta',
+  'cta_image': 'cta',
+  'promo_title': 'promo',
+  'promo_subtitle': 'promo',
+  'promo_btn_link': 'promo',
+  'promo_image': 'promo',
+  'footer_email': 'footer',
+  'footer_phone': 'footer',
+  'footer_address': 'footer',
+  'footer_copyright': 'footer',
+  'footer_about_text': 'footer',
+  'social_facebook': 'social',
+  'social_instagram': 'social',
+  'social_twitter': 'social',
+  'site_name': 'general',
+  'site_description': 'general',
+};
+---
+
+<AdminLayout title="CMS - SmartStore Admin">
+
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Content Management System (CMS)</h1>
+    <button class="btn btn-primary" id="saveAllBtn">
+      <i class="bi bi-save me-1"></i> Save All Changes
+    </button>
+  </div>
+
+  <div id="saveStatus" class="alert alert-success d-none"></div>
+  <div id="saveError" class="alert alert-danger d-none"></div>
+
+  <!-- Settings Groups -->
+  <div class="row">
+    {Object.keys(groupedSettings).map(group => (
+      <div class="col-12 mb-4">
+        <div class="card shadow">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              {groupLabels[group] || group}
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              {groupedSettings[group].map(setting => {
+                const label = setting.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const value = setting.value || '';
+                const id = `setting_${setting.key}`;
+                const groupName = setting.group_name || group;
+                
+                return (
+                  <div class="col-md-6 mb-3" data-group={group}>
+                    <label for={id} class="form-label fw-bold small">
+                      {label}
+                    </label>
+                    <input type="hidden" class="group-name-input" data-key={setting.key} value={groupName} />
+                    {setting.type === 'textarea' ? (
+                      <textarea class="form-control" id={id} rows="3">{value}</textarea>
+                    ) : setting.type === 'image' ? (
+                      <div class="d-flex align-items-center gap-2">
+                        <input type="text" class="form-control" id={id} value={value} placeholder="/assets/img/...">
+                        <button class="btn btn-sm btn-outline-secondary upload-image-btn" data-target={id}>
+                          <i class="bi bi-upload"></i>
+                        </button>
+                      </div>
+                    ) : (
+                      <input type="text" class="form-control" id={id} value={value} />
+                    )}
+                    <small class="text-muted">Key: {setting.key}</small>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <script>
+    //@ts-nocheck
+    import { supabase } from "@/lib/supabase/client";
+
+    // ===== SAVE ALL SETTINGS (UPSERT) =====
+    document.getElementById('saveAllBtn')?.addEventListener('click', async function() {
+      const statusEl = document.getElementById('saveStatus');
+      const errorEl = document.getElementById('saveError');
+      statusEl.classList.add('d-none');
+      errorEl.classList.add('d-none');
+      
+      this.disabled = true;
+      this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+      // Kumpulkan semua input
+      const inputs = document.querySelectorAll('[id^="setting_"]');
+      const updates = [];
+      
+      inputs.forEach(input => {
+        const key = input.id.replace('setting_', '');
+        const groupInput = document.querySelector(`.group-name-input[data-key="${key}"]`);
+        const groupName = groupInput ? groupInput.value : 'general';
+        
+        updates.push({
+          key: key,
+          value: input.value,
+          group_name: groupName
+        });
+      });
+
+      console.log('📝 Updates to save:', updates);
+
+      try {
+        let hasError = false;
+        let successCount = 0;
+        
+        for (const update of updates) {
+          // ===== PAKAI UPSERT (Update or Insert) dengan group_name yang benar =====
+          const { error } = await supabase
+            .from('settings')
+            .upsert({
+              key: update.key,
+              value: update.value,
+              type: 'text',
+              group_name: update.group_name,
+              updated_at: new Date().toISOString()
+            }, { 
+              onConflict: 'key',
+              ignoreDuplicates: false 
+            });
+          
+          if (error) {
+            hasError = true;
+            console.error('❌ Error saving', update.key, error);
+          } else {
+            successCount++;
+            console.log(`✅ Saved ${update.key} with group: ${update.group_name}`);
+          }
+        }
+
+        if (hasError) {
+          errorEl.textContent = `Gagal menyimpan beberapa setting. Cek console untuk detail.`;
+          errorEl.classList.remove('d-none');
+        } else {
+          statusEl.textContent = `${successCount} perubahan berhasil disimpan!`;
+          statusEl.classList.remove('d-none');
+          setTimeout(() => {
+            statusEl.classList.add('d-none');
+            window.location.reload();
+          }, 1500);
+        }
+      } catch (err) {
+        console.error('❌ Save error:', err);
+        errorEl.textContent = 'Error: ' + err.message;
+        errorEl.classList.remove('d-none');
+      }
+
+      this.disabled = false;
+      this.innerHTML = '<i class="bi bi-save me-1"></i> Save All Changes';
+    });
+
+    // ===== UPLOAD IMAGE (placeholder) =====
+    document.querySelectorAll('.upload-image-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const targetId = this.dataset.target;
+        alert('Upload image feature coming soon!');
+      });
+    });
+  </script>
+</AdminLayout>

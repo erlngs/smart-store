@@ -1,0 +1,642 @@
+---
+// src/pages/artikel/[slug].astro
+export const prerender = true;
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.PUBLIC_SUPABASE_URL,
+  import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+);
+
+export async function getStaticPaths() {
+  const supabase = createClient(
+    import.meta.env.PUBLIC_SUPABASE_URL,
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+  );
+
+  const { data: articles } = await supabase
+    .from('articles')
+    .select('slug')
+    .eq('status', 'published');
+
+  return (articles || []).map((article) => ({
+    params: { slug: article.slug },
+  }));
+}
+
+const { slug } = Astro.params;
+
+const { data: article } = await supabase
+  .from('articles')
+  .select('*')
+  .eq('slug', slug)
+  .eq('status', 'published')
+  .single();
+
+if (!article) {
+  return Astro.redirect('/artikel');
+}
+
+const { data: related } = await supabase
+  .from('articles')
+  .select('id, title, slug, cover_image, category, published_at')
+  .eq('status', 'published')
+  .eq('category', article.category)
+  .neq('id', article.id)
+  .order('published_at', { ascending: false })
+  .limit(5);
+
+const categoryColors = {
+  'Tips': '#0d6efd',
+  'Review': '#d63384',
+  'Inspirasi': '#198754',
+  'Tips & Tricks': '#0d6efd',
+  'Product Review': '#d63384',
+};
+function getCategoryColor(cat) {
+  return categoryColors[cat] || '#6c757d';
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+const metaTitle = article.meta_title || `${article.title} - ShopWise Blog`;
+const metaDescription = article.meta_description || article.excerpt || '';
+const canonicalUrl = `https://YOURDOMAIN.com/artikel/${article.slug}`;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": article.title,
+  "description": metaDescription,
+  "image": article.cover_image || '',
+  "datePublished": article.published_at,
+  "dateModified": article.updated_at,
+  "author": { "@type": "Person", "name": article.author_name },
+  "publisher": { "@type": "Organization", "name": "ShopWise" }
+};
+---
+
+<BaseLayout title={metaTitle} description={metaDescription}>
+  <Fragment slot="head">
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content={metaTitle} />
+    <meta property="og:description" content={metaDescription} />
+    {article.cover_image && <meta property="og:image" content={article.cover_image} />}
+    <meta property="og:url" content={canonicalUrl} />
+    <link rel="canonical" href={canonicalUrl} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <!-- Back to Blog -->
+  <div class="article-top-nav">
+    <div class="container">
+      <a href="/artikel" class="back-link">← Kembali ke Blog</a>
+    </div>
+  </div>
+
+  <!-- Article Content -->
+  <div class="container">
+    <div class="article-layout">
+      <!-- Main Article -->
+      <div class="article-content-wrapper">
+        <article>
+          <h1 class="article-title">{article.title}</h1>
+          
+          <div class="article-byline">
+            <span class="author-name">{article.author_name || 'Admin'}</span>
+            <span class="author-role">Penulis & Kontributor SmartStore</span>
+          </div>
+
+          <div class="article-excerpt">
+            {article.excerpt}
+          </div>
+
+          <div class="article-meta-bar">
+            <span class="meta-category" style={`background: ${getCategoryColor(article.category)}`}>
+              {article.category}
+            </span>
+            <span class="meta-date">{formatDate(article.published_at)}</span>
+            <span class="meta-readtime">{article.reading_time || 3} min read</span>
+          </div>
+
+          {article.cover_image && (
+            <div class="cover-image-container">
+              <img src={article.cover_image} alt={article.title} class="cover-image" />
+            </div>
+          )}
+
+          <div class="article-body" set:html={article.content} />
+
+          {article.tags && article.tags.length > 0 && (
+            <div class="article-tags">
+              <span class="tags-label">Tags:</span>
+              {article.tags.map((tag) => (
+                <span class="tag-pill">{tag}</span>
+              ))}
+            </div>
+          )}
+        </article>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="article-sidebar">
+        <!-- Search -->
+        <div class="sidebar-widget search-widget">
+          <h3 class="widget-title">Cari Artikel</h3>
+          <form class="search-form" action="/artikel/search" method="GET">
+            <input type="text" class="search-input" placeholder="Masukkan kata kunci..." name="q" />
+            <button type="submit" class="search-button">Cari</button>
+          </form>
+        </div>
+
+        <!-- Related Articles -->
+        {related && related.length > 0 && (
+          <div class="sidebar-widget">
+            <h3 class="widget-title">Rekomendasi Artikel</h3>
+            {related.map((r) => (
+              <a href={`/artikel/${r.slug}`} class="related-item">
+                <div class="related-category" style={`color: ${getCategoryColor(r.category)}`}>
+                  {r.category}
+                </div>
+                <div class="related-title">{r.title}</div>
+                <div class="related-date">{formatDate(r.published_at)}</div>
+              </a>
+            ))}
+          </div>
+        )}
+
+        <!-- Promo/Newsletter -->
+        <div class="sidebar-widget promo-widget">
+          <h3 class="widget-title">Join Our Newsletter</h3>
+          <p class="promo-text">Subscribe to get special offers, free giveaways, and once-in-a-lifetime deals.</p>
+          <form class="newsletter-form" action="/api/subscribe" method="POST">
+            <input type="email" class="newsletter-input" placeholder="Your email address" required />
+            <button type="submit" class="newsletter-button">Subscribe</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <style is:global>
+    /* Top Navigation */
+    .article-top-nav {
+      background: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+      padding: 14px 0;
+    }
+
+    .back-link {
+      color: #495057;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .back-link:hover {
+      color: #0d6efd;
+    }
+
+    /* Layout */
+    .article-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 50px;
+      padding: 40px 0 60px;
+    }
+
+    .article-content-wrapper {
+      min-width: 0;
+    }
+
+    /* Article Title */
+    .article-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: #212529;
+      margin-bottom: 12px;
+    }
+
+    /* Byline */
+    .article-byline {
+      margin-bottom: 16px;
+      color: #6c757d;
+      font-size: 14px;
+    }
+
+    .author-name {
+      font-weight: 600;
+      color: #212529;
+    }
+
+    .author-role {
+      color: #6c757d;
+      margin-left: 4px;
+    }
+
+    /* Excerpt */
+    .article-excerpt {
+      font-size: 1.1rem;
+      color: #495057;
+      line-height: 1.7;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    /* Meta Bar */
+    .article-meta-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: #6c757d;
+    }
+
+    .meta-category {
+      display: inline-block;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 4px 12px;
+      border-radius: 4px;
+    }
+
+    .meta-date, .meta-readtime {
+      color: #6c757d;
+    }
+
+    /* Cover Image */
+    .cover-image-container {
+      margin-bottom: 32px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .cover-image {
+      width: 100%;
+      max-height: 420px;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Article Body */
+    .article-body {
+      font-size: 1.05rem;
+      color: #495057;
+      line-height: 1.8;
+    }
+
+    .article-body h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #212529;
+      margin-top: 2.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .article-body h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #212529;
+      margin-top: 1.8rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .article-body h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #212529;
+      margin-top: 1.4rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .article-body p {
+      margin-bottom: 1.2rem;
+    }
+
+    .article-body img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+    }
+
+    .article-body ul, .article-body ol {
+      margin-bottom: 1.2rem;
+      padding-left: 1.5rem;
+    }
+
+    .article-body li {
+      margin-bottom: 0.4rem;
+    }
+
+    .article-body blockquote {
+      border-left: 4px solid #0d6efd;
+      background: #f8f9fa;
+      padding: 16px 20px;
+      border-radius: 0 6px 6px 0;
+      margin: 1.5rem 0;
+      color: #495057;
+    }
+
+    .article-body blockquote p {
+      margin-bottom: 0;
+    }
+
+    .article-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+
+    .article-body table th,
+    .article-body table td {
+      border: 1px solid #dee2e6;
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    .article-body table th {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+
+    .article-body pre {
+      background: #f8f9fa;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .article-body code {
+      background: #f8f9fa;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    /* Tags */
+    .article-tags {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tags-label {
+      font-weight: 600;
+      color: #212529;
+      font-size: 14px;
+      margin-right: 4px;
+    }
+
+    .tag-pill {
+      display: inline-block;
+      background: #f1f3f5;
+      color: #495057;
+      font-size: 13px;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    /* Sidebar */
+    .article-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .sidebar-widget {
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 24px;
+    }
+
+    .widget-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #212529;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    /* Search Widget */
+    .search-form {
+      display: flex;
+      gap: 8px;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .search-input:focus {
+      border-color: #0d6efd;
+    }
+
+    .search-button {
+      padding: 8px 16px;
+      background: #212529;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .search-button:hover {
+      background: #0d6efd;
+    }
+
+    /* Related Items */
+    .related-item {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f3f5;
+      transition: padding-left 0.2s ease;
+    }
+
+    .related-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .related-item:hover {
+      padding-left: 8px;
+    }
+
+    .related-category {
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .related-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #212529;
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }
+
+    .related-date {
+      font-size: 12px;
+      color: #6c757d;
+    }
+
+    /* Promo Widget */
+    .promo-widget {
+      background: #f8f9fa;
+      border-color: #e9ecef;
+    }
+
+    .promo-text {
+      font-size: 14px;
+      color: #6c757d;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .newsletter-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .newsletter-input {
+      padding: 10px 14px;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .newsletter-input:focus {
+      border-color: #0d6efd;
+    }
+
+    .newsletter-button {
+      padding: 10px;
+      background: #212529;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .newsletter-button:hover {
+      background: #0d6efd;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .article-layout {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      .article-title {
+        font-size: 1.8rem;
+      }
+
+      .article-sidebar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .article-layout {
+        padding: 24px 0 40px;
+      }
+
+      .article-title {
+        font-size: 1.5rem;
+      }
+
+      .article-sidebar {
+        grid-template-columns: 1fr;
+      }
+
+      .article-body {
+        font-size: 1rem;
+      }
+
+      .article-body h2 {
+        font-size: 1.4rem;
+      }
+
+      .article-body h3 {
+        font-size: 1.2rem;
+      }
+
+      .cover-image {
+        max-height: 250px;
+      }
+
+      .article-meta-bar {
+        font-size: 12px;
+        gap: 12px;
+      }
+
+      .search-form {
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .article-title {
+        font-size: 1.3rem;
+      }
+
+      .article-top-nav {
+        padding: 12px 0;
+      }
+
+      .back-link {
+        font-size: 13px;
+      }
+
+      .article-excerpt {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</BaseLayout>
